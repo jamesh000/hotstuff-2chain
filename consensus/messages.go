@@ -17,7 +17,7 @@ type Block struct {
 	Signature crypto.Signature
 }
 
-func NewBlock(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []crypto.Digest, sigservice crypto.SignatureService) Block {
+func (Block) New(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []crypto.Digest, sigservice crypto.SignatureService) Block {
 	block := Block{
 		Qc:      qc,
 		Tc:      tc,
@@ -33,7 +33,7 @@ func NewBlock(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []cry
 	return block
 }
 
-func GenesisBlock() Block {
+func (Block) Genesis() Block {
 	return Block{}
 }
 
@@ -50,10 +50,18 @@ func (b Block) Verify(committee Committee) error {
 		return fmt.Errorf("%v is not correctly signed", b)
 	}
 
-	// check qc if not genesis
+	if !b.Qc.IsGenesisQC() {
+		err := b.Qc.Verify(committee)
+		if err != nil {
+			return fmt.Errorf("%v is not valid: %w", b, err)
+		}
+	}
 
 	if b.Tc != nil {
-		//
+		err := b.Tc.Verify(committee)
+		if err != nil {
+			return fmt.Errorf("%v is not valid: %w", b, err)
+		}
 	}
 
 	return nil
@@ -82,7 +90,7 @@ type vote struct {
 	signature crypto.Signature
 }
 
-func newVote(block Block, author crypto.PublicKey, sigService crypto.SignatureService) vote {
+func (vote) new(block Block, author crypto.PublicKey, sigService crypto.SignatureService) vote {
 	vote := vote{
 		hash:   block.Digest(),
 		round:  block.Round,
@@ -127,7 +135,7 @@ type QC struct {
 	Signature crypto.Signature
 }
 
-func GenesisQC() QC {
+func (QC) Genesis() QC {
 	return QC{
 		Hash:      crypto.Digest{},
 		Round:     0,
@@ -192,7 +200,7 @@ type timeout struct {
 	signature crypto.Signature
 }
 
-func newTimeout(highQC QC, round Round, author crypto.PublicKey, sigService crypto.SignatureService) timeout {
+func (timeout) New(highQC QC, round Round, author crypto.PublicKey, sigService crypto.SignatureService) timeout {
 	timeout := timeout{
 		highQC: highQC,
 		round:  round,
@@ -214,7 +222,7 @@ func (t timeout) Verify(committee Committee) error {
 		return fmt.Errorf("Timeout %v is not correctly signed", t)
 	}
 
-	if t.highQC.IsGenesisQC() {
+	if !t.highQC.IsGenesisQC() {
 		err := t.highQC.Verify(committee)
 		if err != nil {
 			return fmt.Errorf("Timeout %v not valid: %w", t, err)

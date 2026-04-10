@@ -23,7 +23,7 @@ func main() {
 	msg := []byte("Hello, world!")
 	d := crypto.NewDigest(msg)
 
-	testBlock := consensus.NewBlock(consensus.QC{}, nil, pk, 1, []crypto.Digest{d}, signatureService)
+	testBlock := consensus.Block.New(consensus.QC{}, nil, pk, 1, []crypto.Digest{d}, signatureService)
 
 	fmt.Printf("Block is : %v\n", testBlock)
 

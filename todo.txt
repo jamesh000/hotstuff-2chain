@@ -1,1 +1,2 @@
 Perhaps consider another encryption library
+Fix my wacky constructors

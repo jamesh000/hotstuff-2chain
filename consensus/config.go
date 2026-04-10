@@ -12,7 +12,7 @@ type Parameters struct {
 	SyncRetryDelay uint64
 }
 
-func DefaultParameters() Parameters {
+func (Parameters) Default() Parameters {
 	return Parameters{
 		TimeoutDelay:   5000,
 		SyncRetryDelay: 10000,
@@ -35,7 +35,7 @@ type Committee struct {
 	Epoch       EpochNumber
 }
 
-func NewCommittee(info []AuthorityInfo, epoch EpochNumber) Committee {
+func (Committee) New(info []AuthorityInfo, epoch EpochNumber) Committee {
 	committee := Committee{
 		authorities: make(map[crypto.PublicKey]authority),
 		Epoch:       epoch,
