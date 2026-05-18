@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"log"
 
+	pb "github.com/jamesh000/hotstuff-2chain/consensuspb"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"github.com/jamesh000/hotstuff-2chain/mempool"
 	"github.com/jamesh000/hotstuff-2chain/network"
 	"github.com/jamesh000/hotstuff-2chain/store"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-msgio"
+	"google.golang.org/protobuf/proto"
 )
 
 // Should be be this if running in a serious libp2p network
@@ -21,16 +24,60 @@ const CHANNEL_CAPACITY = 1000
 type Round = uint64
 
 type ConsensusMessage interface {
-	ConsensusMessageMember()
+	SerializeConsensusMessage() ([]byte, error)
 }
 
 type TestMessage struct {
 	message string
 }
 
-func (msg TestMessage) ConsensusMessageMember() {}
+func (msg TestMessage) SerializeConsensusMessage() ([]byte, error) {
+	testmsg := &pb.ConsensusMessage{
+		Message: &pb.ConsensusMessage_Testfield{
+			Testfield: &pb.ConsensusMessage_Test{
+				Messagetext: msg.message,
+			},
+		},
+	}
 
-type Consensus struct{}
+	data, err := proto.Marshal(testmsg)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+type ProposeMessage struct {
+	block Block
+}
+
+func (msg ProposeMessage) SerializeConsensusMessage() ([]byte, error) {
+	return nil, nil
+}
+
+func DeserializeConsensusMessage(data []byte) (ConsensusMessage, error) {
+	msg := &pb.ConsensusMessage{}
+	err := proto.Unmarshal(data, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	switch msg.Message.(type) {
+	case *pb.ConsensusMessage_Testfield:
+		newTestMsg := &TestMessage{
+			message: msg.GetTestfield().GetMessagetext(),
+		}
+
+		return newTestMsg, nil
+	case *pb.ConsensusMessage_Proposal:
+		return nil, fmt.Errorf("Proposal deserialization is not implemented yet")
+	default:
+		log.Fatal("Erroneous consensus message type")
+	}
+
+	return nil, fmt.Errorf("End of the line")
+}
 
 func SpawnConsensus(
 	name crypto.PublicKey,
@@ -40,7 +87,7 @@ func SpawnConsensus(
 	signatureService crypto.SignatureService,
 	store store.Store,
 	rxMempool <-chan crypto.Digest,
-	txMempool chan<- struct{},
+	txMempool chan<- mempool.ConsensusMessage,
 	txCommit chan<- Block,
 ) {
 	consensusCh := make(chan ConsensusMessage, CHANNEL_CAPACITY)
@@ -57,8 +104,7 @@ func SpawnConsensus(
 
 	leaderElector := NewRRLeaderElector(committee)
 
-	// Not yet implemented
-	//mempoolDriver := nil
+	mempoolDriver := NewMempoolDriver(store, txMempool, loopbackCh)
 
 	// Not yet implemented
 	//synchronizer := nil
@@ -70,7 +116,7 @@ func SpawnConsensus(
 		signatureService,
 		store,
 		leaderElector,
-		//mempoolDriver,
+		mempoolDriver,
 		//synchronizer,
 		parameters.TimeoutDelay,
 		consensusCh,
@@ -92,7 +138,17 @@ type ConsensusReceiverHandler struct {
 }
 
 func (c ConsensusReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte) error {
-	fmt.Println(string(msg))
+	consensusMsg, err := DeserializeConsensusMessage(msg)
+	if err != nil {
+		panic(err)
+	}
+
+	switch messageContents := consensusMsg.(type) {
+	case *TestMessage:
+		fmt.Println(messageContents.message)
+	default:
+		fmt.Println("Something terrible has occured")
+	}
 
 	return nil
 }

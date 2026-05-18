@@ -17,7 +17,7 @@ type Core struct {
 	store            store.Store
 	signatureService crypto.SignatureService
 	leaderElector    leaderElector
-	//mempoolDriver    MempoolDriver
+	mempoolDriver    MempoolDriver
 	//synchronizer Synchronizer
 	rxMessage          <-chan ConsensusMessage
 	rxLoopback         <-chan Block
@@ -39,7 +39,7 @@ func SpawnCore(
 	signatureService crypto.SignatureService,
 	store store.Store,
 	leaderElector leaderElector,
-	//mempoolDriver MempoolDriver,
+	mempoolDriver MempoolDriver,
 	//synchronizer Synchronizer,
 	timeoutDelay uint64,
 	rxMessage <-chan ConsensusMessage,
@@ -53,7 +53,7 @@ func SpawnCore(
 		store:            store,
 		signatureService: signatureService,
 		leaderElector:    leaderElector,
-		//mempoolDriver: mempoolDriver,
+		mempoolDriver:    mempoolDriver,
 		//synchronizer: synchronizer,
 		rxMessage:          rxMessage,
 		rxLoopback:         rxLoopback,
@@ -98,7 +98,13 @@ func (c *Core) run() {
 
 		line := scanner.Text()
 
-		c.network.Broadcast(c.committee.BroadcastAddresses(c.name), []byte(line))
+		testMsg := TestMessage{message: line}
+		data, err := testMsg.SerializeConsensusMessage()
+		if err != nil {
+			panic(err)
+		}
+
+		c.network.Broadcast(c.committee.BroadcastAddresses(c.name), data)
 	}
 
 	if err := scanner.Err(); err != nil {

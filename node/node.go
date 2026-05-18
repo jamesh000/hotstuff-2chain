@@ -6,6 +6,7 @@ import (
 
 	"github.com/jamesh000/hotstuff-2chain/consensus"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"github.com/jamesh000/hotstuff-2chain/mempool"
 	"github.com/jamesh000/hotstuff-2chain/network"
 	"github.com/jamesh000/hotstuff-2chain/store"
 )
@@ -18,7 +19,7 @@ type Node struct {
 
 func NewNode(committeeFile string, keyFile string, storePath string, parameterFile *string) (*Node, error) {
 	commit := make(chan consensus.Block, CHANNEL_CAPACITY)
-	consensusToMempoolCh := make(chan struct{}, CHANNEL_CAPACITY)
+	consensusToMempoolCh := make(chan mempool.ConsensusMessage, CHANNEL_CAPACITY)
 	mempoolToConsensus := make(chan crypto.Digest, CHANNEL_CAPACITY)
 
 	committee, err := ReadJSON[Committee](committeeFile)

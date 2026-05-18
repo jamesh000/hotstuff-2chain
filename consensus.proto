@@ -1,0 +1,19 @@
+syntax = "proto3";
+package consensus;
+
+option go_package = "./consensuspb";
+
+message ConsensusMessage {
+        message Test {
+                string messagetext = 1;
+        }
+
+        message Propose {
+                string empty = 1;
+        }
+
+        oneof message {
+              Test testfield = 1;
+              Propose proposal = 2;
+        }
+}
