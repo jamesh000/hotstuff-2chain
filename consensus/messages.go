@@ -17,7 +17,7 @@ type Block struct {
 	Signature crypto.Signature
 }
 
-func (Block) New(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []crypto.Digest, sigservice crypto.SignatureService) Block {
+func NewBlock(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []crypto.Digest, sigservice crypto.SignatureService) Block {
 	block := Block{
 		Qc:      qc,
 		Tc:      tc,
@@ -90,7 +90,7 @@ type vote struct {
 	signature crypto.Signature
 }
 
-func (vote) new(block Block, author crypto.PublicKey, sigService crypto.SignatureService) vote {
+func NewVote(block Block, author crypto.PublicKey, sigService crypto.SignatureService) vote {
 	vote := vote{
 		hash:   block.Digest(),
 		round:  block.Round,
@@ -135,7 +135,7 @@ type QC struct {
 	Signature crypto.Signature
 }
 
-func (QC) Genesis() QC {
+func GenesisQC() QC {
 	return QC{
 		Hash:      crypto.Digest{},
 		Round:     0,
@@ -200,7 +200,7 @@ type timeout struct {
 	signature crypto.Signature
 }
 
-func (timeout) New(highQC QC, round Round, author crypto.PublicKey, sigService crypto.SignatureService) timeout {
+func NewTimeout(highQC QC, round Round, author crypto.PublicKey, sigService crypto.SignatureService) timeout {
 	timeout := timeout{
 		highQC: highQC,
 		round:  round,

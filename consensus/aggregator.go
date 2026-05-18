@@ -14,7 +14,7 @@ type aggregator struct {
 	timeoutAggregators map[Round]*tcMaker
 }
 
-func (aggregator) New(committee Committee) aggregator {
+func NewAggregator(committee Committee) aggregator {
 	return aggregator{
 		committee:          committee,
 		voteAggregators:    make(map[Round]map[crypto.Digest]*qcMaker),
@@ -32,7 +32,7 @@ func (a aggregator) addVote(v vote) (*QC, error) {
 	vdigest := v.Digest()
 	qcMaker, ok := roundMap[vdigest]
 	if !ok {
-		qcMaker = qcMaker.New()
+		qcMaker = NewQcMaker()
 		roundMap[vdigest] = qcMaker
 	}
 
@@ -42,7 +42,7 @@ func (a aggregator) addVote(v vote) (*QC, error) {
 func (a aggregator) addTimeout(t timeout) (*TC, error) {
 	tcMaker, ok := a.timeoutAggregators[t.round]
 	if !ok {
-		tcMaker = tcMaker.New()
+		tcMaker = NewTcMaker()
 		a.timeoutAggregators[t.round] = tcMaker
 	}
 
@@ -70,7 +70,7 @@ type qcMaker struct {
 	aggregateSig crypto.AggregateSignature
 }
 
-func (qcMaker) New() *qcMaker {
+func NewQcMaker() *qcMaker {
 	return &qcMaker{
 		weight: 0,
 		voters: make([]crypto.PublicKey, 0, quorumSizeGuess),
@@ -109,7 +109,7 @@ type tcMaker struct {
 	aggregateSig crypto.AggregateSignature
 }
 
-func (tcMaker) New() *tcMaker {
+func NewTcMaker() *tcMaker {
 	return &tcMaker{
 		weight: 0,
 		votes:  make([]authorityTimeoutRound, 0, quorumSizeGuess),

@@ -15,7 +15,7 @@ type rrLeaderElector struct {
 	committee Committee
 }
 
-func (rrLeaderElector) New(committee Committee) rrLeaderElector {
+func NewRRLeaderElector(committee Committee) rrLeaderElector {
 	return rrLeaderElector{
 		committee: committee,
 	}
@@ -23,7 +23,7 @@ func (rrLeaderElector) New(committee Committee) rrLeaderElector {
 
 func (rle rrLeaderElector) getLeader(round Round) crypto.PublicKey {
 	keys := make([]crypto.PublicKey, 0, rle.committee.Size())
-	for k := range rle.committee.authorities {
+	for k := range rle.committee.Authorities {
 		keys = append(keys, k)
 	}
 

@@ -1,42 +1,42 @@
 package main
 
 import (
-	"encoding/base64"
+	"context"
 	"fmt"
+	"log"
+	"os"
 
-	"github.com/jamesh000/hotstuff-2chain/consensus"
-	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"github.com/urfave/cli/v3"
 )
 
 func main() {
-	sk, pk := crypto.GenerateKeypair()
-	skB64 := base64.StdEncoding.EncodeToString(sk[:])
-	fmt.Printf("sk: %v, pk: %v\n", skB64, pk)
+	cmd := &cli.Command{
+		Commands: []*cli.Command{
+			{
+				Name:  "test",
+				Usage: "Create a random committee and run consensus",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					fmt.Println("Not implemented")
+					return nil
+				},
+			},
+			{
+				Name:  "run",
+				Usage: "Run a node",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					fmt.Println("Not implemented")
+					return nil
+				},
+			},
+			{
+				Name:   "teststore",
+				Usage:  "Test the store",
+				Action: storeTest,
+			},
+		},
+	}
 
-	sk2, pk2 := crypto.GenerateKeypair()
-	skB642 := base64.StdEncoding.EncodeToString(sk2[:])
-	fmt.Printf("sk2: %v, pk2: %v\n", skB642, pk2)
-
-	signatureService := crypto.NewSignatureService(sk)
-	signatureService2 := crypto.NewSignatureService(sk2)
-
-	msg := []byte("Hello, world!")
-	d := crypto.NewDigest(msg)
-
-	testBlock := consensus.Block.New(consensus.QC{}, nil, pk, 1, []crypto.Digest{d}, signatureService)
-
-	fmt.Printf("Block is : %v\n", testBlock)
-
-	var as crypto.AggregateSignature
-
-	as.Add(signatureService.RequestSignature(d))
-	as.Add(signatureService2.RequestSignature(d))
-
-	finalSig := as.ToSignature()
-
-	if finalSig.FastAggregateVerify(d, []crypto.PublicKey{pk, pk2}) {
-		fmt.Println("Verified the block!")
-	} else {
-		fmt.Println("Failed to verify the block.")
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
 	}
 }

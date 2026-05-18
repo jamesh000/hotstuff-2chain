@@ -33,3 +33,6 @@ go.work.sum
 
 # Executable
 hotstuff-2chain
+
+# directory just for testing stuff
+testing/

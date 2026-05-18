@@ -18,6 +18,10 @@ type RoutedHost struct {
 	dht  *kaddht.IpfsDHT
 }
 
+func (rh RoutedHost) String() string {
+	return rh.node.ID().String()
+}
+
 func NewRoutedHost(ctx context.Context, addr string, priv crypto.PrivKey, bsPeers []peer.AddrInfo) (*RoutedHost, error) {
 	// Create the address of the node
 	nodeAddr, err := multiaddr.NewMultiaddr(addr)

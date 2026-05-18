@@ -43,6 +43,19 @@ func (pk PublicKey) String() string {
 	return pk.encodeBase64()
 }
 
+func (pk PublicKey) MarshalText() ([]byte, error) {
+	return []byte(pk.encodeBase64()), nil
+}
+
+func (pk *PublicKey) UnmarshalText(data []byte) error {
+	err := pk.decodeBase64(string(data))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type SecretKey [32]byte
 
 func (sk SecretKey) encodeBase64() string {
@@ -60,6 +73,19 @@ func (sk *SecretKey) decodeBase64(s string) error {
 	}
 
 	copy(sk[:], b)
+
+	return nil
+}
+
+func (sk SecretKey) MarshalText() ([]byte, error) {
+	return []byte(sk.encodeBase64()), nil
+}
+
+func (sk *SecretKey) UnmarshalText(data []byte) error {
+	err := sk.decodeBase64(string(data))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
