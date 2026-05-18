@@ -1,10 +1,12 @@
 package node
 
 import (
+	"context"
 	"log"
 
 	"github.com/jamesh000/hotstuff-2chain/consensus"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"github.com/jamesh000/hotstuff-2chain/network"
 	"github.com/jamesh000/hotstuff-2chain/store"
 )
 
@@ -16,6 +18,8 @@ type Node struct {
 
 func NewNode(committeeFile string, keyFile string, storePath string, parameterFile *string) (*Node, error) {
 	commit := make(chan consensus.Block, CHANNEL_CAPACITY)
+	consensusToMempoolCh := make(chan struct{}, CHANNEL_CAPACITY)
+	mempoolToConsensus := make(chan crypto.Digest, CHANNEL_CAPACITY)
 
 	committee, err := ReadJSON[Committee](committeeFile)
 	if err != nil {
@@ -28,21 +32,39 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 	}
 	name := secret.Name
 	secretKey := secret.Secret
+	peerPriv := secret.PeerKey.Key
 
 	var parameters *Parameters
 	if parameterFile != nil {
 		parameters, err = ReadJSON[Parameters](*parameterFile)
-
+	} else {
+		p := DefaultParameters()
+		parameters = &p
 	}
 
 	store, err := store.NewStore(storePath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	signatureService = crypto.NewSignatureService(secretKey)
+	signatureService := crypto.NewSignatureService(secretKey)
 
-	consensus.Spawn()
+	host, err := network.NewRoutedHost(context.Background(), "/ip4/0.0.0.0/tcp/0", peerPriv, committee.BootstrapPeers)
+	if err != nil {
+		return nil, err
+	}
+
+	consensus.SpawnConsensus(
+		name,
+		*host,
+		committee.Consensus,
+		parameters.Consensus,
+		signatureService,
+		*store,
+		mempoolToConsensus,
+		consensusToMempoolCh,
+		commit,
+	)
 
 	log.Printf("Node %v successfully booted\n", name)
 	return &Node{commit}, nil

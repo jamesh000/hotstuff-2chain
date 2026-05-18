@@ -9,6 +9,12 @@ type Parameters struct {
 	Empty int `json:"empty"`
 }
 
+func DefaultParameters() Parameters {
+	return Parameters{
+		Empty: 0,
+	}
+}
+
 type Authority struct {
 	Stake               Stake
 	TransactionsAddress peer.ID

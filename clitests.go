@@ -2,17 +2,29 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"time"
 
 	"github.com/cockroachdb/pebble"
+	"github.com/jamesh000/hotstuff-2chain/consensus"
+	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"github.com/jamesh000/hotstuff-2chain/mempool"
+	"github.com/jamesh000/hotstuff-2chain/network"
+	"github.com/jamesh000/hotstuff-2chain/node"
 	"github.com/jamesh000/hotstuff-2chain/store"
 	"github.com/urfave/cli/v3"
+
+	libp2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 // Used to check the store is working properly
 func storeTest(ctx context.Context, cmd *cli.Command) error {
-	storage := store.NewStore("storefile")
+	storage, err := store.NewStore("storefile")
+	if err != nil {
+		panic(err)
+	}
 
 	storage.Write([]byte("billy"), []byte("bob"))
 	storage.Write([]byte("keith"), []byte("woods"))
@@ -61,6 +73,108 @@ func storeTest(ctx context.Context, cmd *cli.Command) error {
 	time.Sleep(1 * time.Second)
 
 	storage.Close()
+
+	return nil
+}
+
+// generate a bunch of secrets
+const secretCount = 10
+
+func genSecrets(ctx context.Context, cmd *cli.Command) error {
+
+	for i := range secretCount {
+		secret, name := crypto.GenerateKeypair()
+		peerkey, _, err := libp2pcrypto.GenerateEd25519Key(rand.Reader)
+		if err != nil {
+			panic(err)
+		}
+
+		newSecret := node.Secret{
+			Secret:  secret,
+			Name:    name,
+			PeerKey: node.SerializablePeerKey{Key: peerkey},
+		}
+
+		secretFileName := fmt.Sprintf("secret_%v.sc", i)
+
+		node.WriteJSON(secretFileName, newSecret)
+	}
+
+	return nil
+}
+
+func bootstrapper(ctx context.Context, cmd *cli.Command) error {
+	priv, _, err := libp2pcrypto.GenerateEd25519Key(rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+
+	host, err := network.NewRoutedHost(context.Background(), "/ip4/0.0.0.0/tcp/0", priv, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	host.PrintAddrs()
+
+	select {}
+}
+
+func generateCommittee(ctx context.Context, cmd *cli.Command) error {
+	bsNode := cmd.Args().Get(0)
+
+	authorityInfos := make([]consensus.AuthorityInfo, 0, secretCount)
+
+	for i := range secretCount {
+		secretFileName := fmt.Sprintf("secret_%v.sc", i)
+
+		ithSecret, err := node.ReadJSON[node.Secret](secretFileName)
+		if err != nil {
+			panic(err)
+		}
+
+		name := ithSecret.Name
+
+		address, err := peer.IDFromPrivateKey(ithSecret.PeerKey.Key)
+		if err != nil {
+			panic(err)
+		}
+
+		ithAuthority := consensus.AuthorityInfo{
+			Author:  name,
+			Stake:   1,
+			Address: address,
+		}
+
+		authorityInfos = append(authorityInfos, ithAuthority)
+	}
+
+	consensusCommittee := consensus.NewCommittee(authorityInfos, 1)
+	mempoolCommitee := mempool.Committee{Empty: "nothing for now"}
+	bootstrapNodes := []string{bsNode}
+
+	newCommittee := node.Committee{
+		Consensus:      consensusCommittee,
+		Mempool:        mempoolCommitee,
+		BootstrapPeers: bootstrapNodes,
+	}
+
+	node.WriteJSON("testcommittee.cmt", newCommittee)
+
+	return nil
+}
+
+func testRun(ctx context.Context, cmd *cli.Command) error {
+	secretNo := cmd.Args().Get(0)
+
+	secretFileName := fmt.Sprintf("secret_%v.sc", secretNo)
+	testStoreName := fmt.Sprintf("teststore_%v.sc", secretNo)
+
+	node, err := node.NewNode("testcommittee.cmt", secretFileName, testStoreName, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(node)
 
 	return nil
 }

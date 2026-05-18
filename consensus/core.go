@@ -1,7 +1,9 @@
 package consensus
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/network"
@@ -33,6 +35,7 @@ type Core struct {
 func SpawnCore(
 	name crypto.PublicKey,
 	committee Committee,
+	host network.RoutedHost,
 	signatureService crypto.SignatureService,
 	store store.Store,
 	leaderElector leaderElector,
@@ -62,19 +65,43 @@ func SpawnCore(
 		highQC:             GenesisQC(),
 		timer:              NewTimer(timeoutDelay),
 		aggregator:         NewAggregator(committee),
-		network:            *network.NewSimpleSender(protocol.ID(CONSENSUS_PROTOCOL)),
+		network:            *network.NewSimpleSender(host, protocol.ID(CONSENSUS_PROTOCOL)),
 	}
 
-	go newCore.run()
+	//go newCore.run()
+
+	// No parallelism for sloppy testing
+	newCore.run()
 }
 
 func (c *Core) run() {
-	for msg := range c.rxMessage {
-		switch m := msg.(type) {
-		case TestMessage:
-			fmt.Println(m.message)
-		default:
-			panic(fmt.Errorf("Unexpected protocol message"))
+	/*
+		for msg := range c.rxMessage {
+			switch m := msg.(type) {
+			case TestMessage:
+				fmt.Println(m.message)
+			default:
+				panic(fmt.Errorf("Unexpected protocol message"))
+			}
 		}
+	*/
+
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		fmt.Print("> ")
+
+		if !scanner.Scan() {
+			// Stop loop on EOF or error
+			break
+		}
+
+		line := scanner.Text()
+
+		c.network.Broadcast(c.committee.BroadcastAddresses(c.name), []byte(line))
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "error reading input:", err)
 	}
 }

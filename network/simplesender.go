@@ -7,6 +7,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-msgio"
 )
 
 type SimpleSender struct {
@@ -15,9 +16,10 @@ type SimpleSender struct {
 	proto       protocol.ID
 }
 
-func NewSimpleSender(proto protocol.ID) *SimpleSender {
+func NewSimpleSender(host RoutedHost, proto protocol.ID) *SimpleSender {
 	return &SimpleSender{
 		connections: make(map[peer.ID]connChannels),
+		host:        host,
 		proto:       proto,
 	}
 }
@@ -83,6 +85,7 @@ func spawnConnection(pid peer.ID, host RoutedHost, proto protocol.ID) connChanne
 }
 
 func (c *connection) run(host RoutedHost, proto protocol.ID, ctx context.Context) {
+
 	// connect
 	peerInfo := host.node.Peerstore().PeerInfo(c.pid)
 
@@ -106,9 +109,11 @@ func (c *connection) run(host RoutedHost, proto protocol.ID, ctx context.Context
 		return
 	}
 
+	delimStream := msgio.NewReadWriter(stream)
+
 	// transmit messages from the receiver
 	for data := range c.receiver {
-		if _, err := stream.Write(data); err != nil {
+		if err := delimStream.WriteMsg(data); err != nil {
 			c.errCh <- fmt.Errorf("Write broke for peer %v", c.pid)
 			return
 		}

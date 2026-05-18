@@ -1,6 +1,7 @@
 package network
 
 import (
+	"io"
 	"log"
 
 	"github.com/libp2p/go-libp2p/core/network"
@@ -30,18 +31,26 @@ func SpawnReceiver(host RoutedHost, handler MessageHandler, proto protocol.ID) {
 }
 
 func spawnRunner(stream network.Stream, pid peer.ID, handler MessageHandler) {
+	defer stream.Close()
+
 	reader := msgio.NewReader(stream)
 	writer := msgio.NewWriter(stream)
 
 	for {
 		msg, err := reader.ReadMsg()
 		if err != nil {
-			log.Printf("Error reading from peer %v: %v\n", pid, err.Error())
+			if err == io.EOF {
+				log.Printf("Peer %v closed stream", pid)
+			} else {
+				log.Printf("Error reading from peer %v: %v\n", pid, err.Error())
+				stream.Reset()
+			}
 			return
 		}
 
 		if err = handler.Dispatch(writer, msg); err != nil {
 			log.Printf("Error dispatching received msg from peer %v: %v", pid, err.Error())
+			stream.Reset()
 			return
 		}
 	}

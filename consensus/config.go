@@ -13,7 +13,7 @@ type Parameters struct {
 	SyncRetryDelay uint64
 }
 
-func (Parameters) Default() Parameters {
+func DefaultParameters() Parameters {
 	return Parameters{
 		TimeoutDelay:   5000,
 		SyncRetryDelay: 10000,
@@ -44,8 +44,8 @@ func NewCommittee(info []AuthorityInfo, epoch EpochNumber) Committee {
 
 	for _, a := range info {
 		committee.Authorities[a.Author] = Authority{
-			stake:   a.Stake,
-			address: a.Address,
+			Stake:   a.Stake,
+			Address: a.Address,
 		}
 	}
 
@@ -58,7 +58,7 @@ func (c Committee) Size() int {
 
 func (c Committee) Stake(name crypto.PublicKey) Stake {
 	if a, ok := c.Authorities[name]; ok {
-		return a.stake
+		return a.Stake
 	}
 	return 0
 }
@@ -66,21 +66,21 @@ func (c Committee) Stake(name crypto.PublicKey) Stake {
 func (c Committee) QuorumThreshold() Stake {
 	totalStake := Stake(0)
 	for _, a := range c.Authorities {
-		totalStake += a.stake
+		totalStake += a.Stake
 	}
 	return totalStake
 }
 
 func (c Committee) Address(name crypto.PublicKey) interface{} {
-	return c.Authorities[name].address
+	return c.Authorities[name].Address
 }
 
-func (c Committee) BroadcastAddresses(myself crypto.PublicKey) []Authority {
-	addresses := make([]Authority, 0, len(c.Authorities))
+func (c Committee) BroadcastAddresses(myself crypto.PublicKey) []peer.ID {
+	addresses := make([]peer.ID, 0, len(c.Authorities))
 
 	for pk, a := range c.Authorities {
 		if pk != myself {
-			addresses = append(addresses, a)
+			addresses = append(addresses, a.Address)
 		}
 	}
 

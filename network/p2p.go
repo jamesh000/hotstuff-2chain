@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	libp2p "github.com/libp2p/go-libp2p"
@@ -18,11 +19,21 @@ type RoutedHost struct {
 	dht  *kaddht.IpfsDHT
 }
 
+func (rh RoutedHost) ID() peer.ID {
+	return rh.node.ID()
+}
+
 func (rh RoutedHost) String() string {
 	return rh.node.ID().String()
 }
 
-func NewRoutedHost(ctx context.Context, addr string, priv crypto.PrivKey, bsPeers []peer.AddrInfo) (*RoutedHost, error) {
+func (rh RoutedHost) PrintAddrs() {
+	for _, addr := range rh.node.Addrs() {
+		fmt.Printf("%s/p2p/%s\n", addr, rh.node.ID())
+	}
+}
+
+func NewRoutedHost(ctx context.Context, addr string, priv crypto.PrivKey, bsPeers []string) (*RoutedHost, error) {
 	// Create the address of the node
 	nodeAddr, err := multiaddr.NewMultiaddr(addr)
 	if err != nil {
@@ -30,10 +41,19 @@ func NewRoutedHost(ctx context.Context, addr string, priv crypto.PrivKey, bsPeer
 		return nil, err
 	}
 
+	bootstrapPeers := make([]peer.AddrInfo, len(bsPeers))
+	for _, p := range bsPeers {
+		pinfo, err := peer.AddrInfoFromString(p)
+		if err != nil {
+			return nil, err
+		}
+		bootstrapPeers = append(bootstrapPeers, *pinfo)
+	}
+
 	// Set up routing
 	var dht *kaddht.IpfsDHT
 	newDHT := func(h host.Host) (routing.PeerRouting, error) {
-		dht, err = kaddht.New(ctx, h, kaddht.Mode(kaddht.ModeServer), kaddht.BootstrapPeers(bsPeers...))
+		dht, err = kaddht.New(ctx, h, kaddht.Mode(kaddht.ModeServer), kaddht.BootstrapPeers(bootstrapPeers...))
 		return dht, err
 	}
 
@@ -43,10 +63,13 @@ func NewRoutedHost(ctx context.Context, addr string, priv crypto.PrivKey, bsPeer
 		libp2p.Identity(priv),
 		libp2p.Routing(newDHT),
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	if err = dht.Bootstrap(ctx); err != nil {
 		return nil, err
 	}
 
-	return &RoutedHost{h, dht}, err
+	return &RoutedHost{h, dht}, nil
 }

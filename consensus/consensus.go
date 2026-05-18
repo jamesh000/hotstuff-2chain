@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/jamesh000/hotstuff-2chain/crypto"
@@ -39,7 +40,7 @@ func SpawnConsensus(
 	signatureService crypto.SignatureService,
 	store store.Store,
 	rxMempool <-chan crypto.Digest,
-	txMempool chan<- string,
+	txMempool chan<- struct{},
 	txCommit chan<- Block,
 ) {
 	consensusCh := make(chan ConsensusMessage, CHANNEL_CAPACITY)
@@ -52,7 +53,7 @@ func SpawnConsensus(
 		ConsensusReceiverHandler{consensusCh, helperCh},
 		protocol.ID(CONSENSUS_PROTOCOL),
 	)
-	log.Printf("Node %v listening to consensus messages with peerid %v", name, host)
+	log.Printf("Node %v listening to consensus messages with peerid %v", name, host.ID())
 
 	leaderElector := NewRRLeaderElector(committee)
 
@@ -65,6 +66,7 @@ func SpawnConsensus(
 	SpawnCore(
 		name,
 		committee,
+		host,
 		signatureService,
 		store,
 		leaderElector,
@@ -89,7 +91,8 @@ type ConsensusReceiverHandler struct {
 	txHelper    chan<- HelperMessage
 }
 
-func (c ConsensusReceiverHandler) Dispatch(msgio.WriteCloser, []byte) error {
+func (c ConsensusReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte) error {
+	fmt.Println(string(msg))
 
 	return nil
 }

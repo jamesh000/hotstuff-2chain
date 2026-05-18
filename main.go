@@ -33,6 +33,26 @@ func main() {
 				Usage:  "Test the store",
 				Action: storeTest,
 			},
+			{
+				Name:   "gensecrets",
+				Usage:  "Create a set of secrets",
+				Action: genSecrets,
+			},
+			{
+				Name:   "bootstrapper",
+				Usage:  "Run a bootstrapper node",
+				Action: bootstrapper,
+			},
+			{
+				Name:   "gencommittee",
+				Usage:  "Generate a commitee using generated secrets",
+				Action: generateCommittee,
+			},
+			{
+				Name:   "testrun",
+				Usage:  "Run a test node using generated secrets/committee",
+				Action: testRun,
+			},
 		},
 	}
 

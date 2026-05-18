@@ -1,6 +1,7 @@
 package node
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,15 +18,50 @@ type Committee struct {
 	BootstrapPeers []string            `json:"bspeers"`
 }
 
+type SerializablePeerKey struct {
+	Key libp2pcrypto.PrivKey
+}
+
+func (pk SerializablePeerKey) MarshalText() ([]byte, error) {
+	data, err := libp2pcrypto.MarshalPrivateKey(pk.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(base64.StdEncoding.EncodeToString(data)), nil
+}
+
+func (pk *SerializablePeerKey) UnmarshalText(data []byte) error {
+	decoded, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		return err
+	}
+
+	key, err := libp2pcrypto.UnmarshalPrivateKey(decoded)
+	if err != nil {
+		return err
+	}
+
+	pk.Key = key
+	return nil
+}
+
 type Secret struct {
-	Name    crypto.PublicKey     `json:"consensusname"`
-	Secret  crypto.SecretKey     `json:"consensussecret"`
-	PeerKey libp2pcrypto.PrivKey `json:"peerkey"`
+	Name    crypto.PublicKey    `json:"name"`
+	Secret  crypto.SecretKey    `json:"secret"`
+	PeerKey SerializablePeerKey `json:"peerkey"`
 }
 
 type Parameters struct {
 	Consensus consensus.Parameters `json:"consensus"`
 	Mempool   mempool.Parameters   `json:"mempool"`
+}
+
+func DefaultParameters() Parameters {
+	return Parameters{
+		Consensus: consensus.DefaultParameters(),
+		Mempool:   mempool.DefaultParameters(),
+	}
 }
 
 func WriteJSON(path string, v any) error {
