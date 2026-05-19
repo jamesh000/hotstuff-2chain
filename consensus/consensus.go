@@ -34,7 +34,7 @@ type TestMessage struct {
 func (msg TestMessage) SerializeConsensusMessage() ([]byte, error) {
 	testmsg := &pb.ConsensusMessage{
 		Message: &pb.ConsensusMessage_Testfield{
-			Testfield: &pb.ConsensusMessage_Test{
+			Testfield: &pb.ConsensusMessage_TestMessage{
 				Messagetext: msg.message,
 			},
 		},
@@ -53,7 +53,20 @@ type ProposeMessage struct {
 }
 
 func (msg ProposeMessage) SerializeConsensusMessage() ([]byte, error) {
-	return nil, nil
+	proposeMessage := &pb.ConsensusMessage{
+		Message: &pb.ConsensusMessage_Proposal{
+			Proposal: &pb.ConsensusMessage_ProposeMessage{
+				ProposedBlock: msg.block.toProto(),
+			},
+		},
+	}
+
+	data, err := proto.Marshal(proposeMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func DeserializeConsensusMessage(data []byte) (ConsensusMessage, error) {
@@ -97,7 +110,7 @@ func SpawnConsensus(
 
 	network.SpawnReceiver(
 		host,
-		ConsensusReceiverHandler{consensusCh, helperCh},
+		ConsensusReceiverHandler{consensusCh, helperCh, committee},
 		protocol.ID(CONSENSUS_PROTOCOL),
 	)
 	log.Printf("Node %v listening to consensus messages with peerid %v", name, host.ID())
@@ -135,6 +148,9 @@ func SpawnConsensus(
 type ConsensusReceiverHandler struct {
 	txConsensus chan<- ConsensusMessage
 	txHelper    chan<- HelperMessage
+
+	// temporary for debugging
+	committee Committee
 }
 
 func (c ConsensusReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte) error {
@@ -146,6 +162,14 @@ func (c ConsensusReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte)
 	switch messageContents := consensusMsg.(type) {
 	case *TestMessage:
 		fmt.Println(messageContents.message)
+	case *ProposeMessage:
+		fmt.Printf("Got %v", messageContents.block)
+		err := messageContents.block.Verify(c.committee)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("Block is verified")
+		}
 	default:
 		fmt.Println("Something terrible has occured")
 	}

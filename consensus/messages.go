@@ -80,7 +80,7 @@ func (b Block) Digest() crypto.Digest {
 }
 
 func (b Block) String() string {
-	return fmt.Sprintf("Block(%v, %v, %v)", b.Author, b.Round, b.Payload)
+	return fmt.Sprintf("Block<%v>(%v, %v, %v)", b.Digest(), b.Author, b.Round, b.Payload)
 }
 
 type vote struct {

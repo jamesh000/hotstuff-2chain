@@ -27,6 +27,10 @@ type ConsensusMessage struct {
 	//
 	//	*ConsensusMessage_Testfield
 	//	*ConsensusMessage_Proposal
+	//	*ConsensusMessage_VMessage
+	//	*ConsensusMessage_TMessage
+	//	*ConsensusMessage_TcMessage
+	//	*ConsensusMessage_SrMessage
 	Message       isConsensusMessage_Message `protobuf_oneof:"message"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -69,7 +73,7 @@ func (x *ConsensusMessage) GetMessage() isConsensusMessage_Message {
 	return nil
 }
 
-func (x *ConsensusMessage) GetTestfield() *ConsensusMessage_Test {
+func (x *ConsensusMessage) GetTestfield() *ConsensusMessage_TestMessage {
 	if x != nil {
 		if x, ok := x.Message.(*ConsensusMessage_Testfield); ok {
 			return x.Testfield
@@ -78,10 +82,46 @@ func (x *ConsensusMessage) GetTestfield() *ConsensusMessage_Test {
 	return nil
 }
 
-func (x *ConsensusMessage) GetProposal() *ConsensusMessage_Propose {
+func (x *ConsensusMessage) GetProposal() *ConsensusMessage_ProposeMessage {
 	if x != nil {
 		if x, ok := x.Message.(*ConsensusMessage_Proposal); ok {
 			return x.Proposal
+		}
+	}
+	return nil
+}
+
+func (x *ConsensusMessage) GetVMessage() *ConsensusMessage_VoteMessage {
+	if x != nil {
+		if x, ok := x.Message.(*ConsensusMessage_VMessage); ok {
+			return x.VMessage
+		}
+	}
+	return nil
+}
+
+func (x *ConsensusMessage) GetTMessage() *ConsensusMessage_TimeoutMessage {
+	if x != nil {
+		if x, ok := x.Message.(*ConsensusMessage_TMessage); ok {
+			return x.TMessage
+		}
+	}
+	return nil
+}
+
+func (x *ConsensusMessage) GetTcMessage() *ConsensusMessage_TCMessage {
+	if x != nil {
+		if x, ok := x.Message.(*ConsensusMessage_TcMessage); ok {
+			return x.TcMessage
+		}
+	}
+	return nil
+}
+
+func (x *ConsensusMessage) GetSrMessage() *ConsensusMessage_SyncRequestMessage {
+	if x != nil {
+		if x, ok := x.Message.(*ConsensusMessage_SrMessage); ok {
+			return x.SrMessage
 		}
 	}
 	return nil
@@ -92,39 +132,411 @@ type isConsensusMessage_Message interface {
 }
 
 type ConsensusMessage_Testfield struct {
-	Testfield *ConsensusMessage_Test `protobuf:"bytes,1,opt,name=testfield,proto3,oneof"`
+	Testfield *ConsensusMessage_TestMessage `protobuf:"bytes,1,opt,name=testfield,proto3,oneof"`
 }
 
 type ConsensusMessage_Proposal struct {
-	Proposal *ConsensusMessage_Propose `protobuf:"bytes,2,opt,name=proposal,proto3,oneof"`
+	Proposal *ConsensusMessage_ProposeMessage `protobuf:"bytes,2,opt,name=proposal,proto3,oneof"`
+}
+
+type ConsensusMessage_VMessage struct {
+	VMessage *ConsensusMessage_VoteMessage `protobuf:"bytes,3,opt,name=vMessage,proto3,oneof"`
+}
+
+type ConsensusMessage_TMessage struct {
+	TMessage *ConsensusMessage_TimeoutMessage `protobuf:"bytes,4,opt,name=tMessage,proto3,oneof"`
+}
+
+type ConsensusMessage_TcMessage struct {
+	TcMessage *ConsensusMessage_TCMessage `protobuf:"bytes,5,opt,name=tcMessage,proto3,oneof"`
+}
+
+type ConsensusMessage_SrMessage struct {
+	SrMessage *ConsensusMessage_SyncRequestMessage `protobuf:"bytes,6,opt,name=srMessage,proto3,oneof"`
 }
 
 func (*ConsensusMessage_Testfield) isConsensusMessage_Message() {}
 
 func (*ConsensusMessage_Proposal) isConsensusMessage_Message() {}
 
-type ConsensusMessage_Test struct {
+func (*ConsensusMessage_VMessage) isConsensusMessage_Message() {}
+
+func (*ConsensusMessage_TMessage) isConsensusMessage_Message() {}
+
+func (*ConsensusMessage_TcMessage) isConsensusMessage_Message() {}
+
+func (*ConsensusMessage_SrMessage) isConsensusMessage_Message() {}
+
+type Block struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuorumCert    *QC                    `protobuf:"bytes,1,opt,name=quorumCert,proto3" json:"quorumCert,omitempty"`
+	TimeoutCert   *TC                    `protobuf:"bytes,2,opt,name=timeoutCert,proto3,oneof" json:"timeoutCert,omitempty"`
+	Author        []byte                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
+	Round         uint64                 `protobuf:"varint,4,opt,name=round,proto3" json:"round,omitempty"`
+	Payload       [][]byte               `protobuf:"bytes,5,rep,name=payload,proto3" json:"payload,omitempty"`
+	Signature     []byte                 `protobuf:"bytes,6,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Block) Reset() {
+	*x = Block{}
+	mi := &file_consensus_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Block) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Block) ProtoMessage() {}
+
+func (x *Block) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Block.ProtoReflect.Descriptor instead.
+func (*Block) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Block) GetQuorumCert() *QC {
+	if x != nil {
+		return x.QuorumCert
+	}
+	return nil
+}
+
+func (x *Block) GetTimeoutCert() *TC {
+	if x != nil {
+		return x.TimeoutCert
+	}
+	return nil
+}
+
+func (x *Block) GetAuthor() []byte {
+	if x != nil {
+		return x.Author
+	}
+	return nil
+}
+
+func (x *Block) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *Block) GetPayload() [][]byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *Block) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+type QC struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hash          []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Round         uint64                 `protobuf:"varint,2,opt,name=round,proto3" json:"round,omitempty"`
+	Voters        [][]byte               `protobuf:"bytes,3,rep,name=voters,proto3" json:"voters,omitempty"`
+	Signature     []byte                 `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QC) Reset() {
+	*x = QC{}
+	mi := &file_consensus_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QC) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QC) ProtoMessage() {}
+
+func (x *QC) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QC.ProtoReflect.Descriptor instead.
+func (*QC) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *QC) GetHash() []byte {
+	if x != nil {
+		return x.Hash
+	}
+	return nil
+}
+
+func (x *QC) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *QC) GetVoters() [][]byte {
+	if x != nil {
+		return x.Voters
+	}
+	return nil
+}
+
+func (x *QC) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+type Vote struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hash          []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Round         uint64                 `protobuf:"varint,2,opt,name=round,proto3" json:"round,omitempty"`
+	Author        []byte                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
+	Signature     []byte                 `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Vote) Reset() {
+	*x = Vote{}
+	mi := &file_consensus_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Vote) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Vote) ProtoMessage() {}
+
+func (x *Vote) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Vote.ProtoReflect.Descriptor instead.
+func (*Vote) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Vote) GetHash() []byte {
+	if x != nil {
+		return x.Hash
+	}
+	return nil
+}
+
+func (x *Vote) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *Vote) GetAuthor() []byte {
+	if x != nil {
+		return x.Author
+	}
+	return nil
+}
+
+func (x *Vote) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+type TC struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Round         uint64                      `protobuf:"varint,1,opt,name=round,proto3" json:"round,omitempty"`
+	Atrs          []*TC_AuthorityTimeoutRound `protobuf:"bytes,2,rep,name=atrs,proto3" json:"atrs,omitempty"`
+	Signature     []byte                      `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TC) Reset() {
+	*x = TC{}
+	mi := &file_consensus_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TC) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TC) ProtoMessage() {}
+
+func (x *TC) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TC.ProtoReflect.Descriptor instead.
+func (*TC) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *TC) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *TC) GetAtrs() []*TC_AuthorityTimeoutRound {
+	if x != nil {
+		return x.Atrs
+	}
+	return nil
+}
+
+func (x *TC) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+type Timeout struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HighQC        *QC                    `protobuf:"bytes,1,opt,name=highQC,proto3" json:"highQC,omitempty"`
+	Round         uint64                 `protobuf:"varint,2,opt,name=round,proto3" json:"round,omitempty"`
+	Author        []byte                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
+	Signature     []byte                 `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Timeout) Reset() {
+	*x = Timeout{}
+	mi := &file_consensus_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Timeout) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Timeout) ProtoMessage() {}
+
+func (x *Timeout) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Timeout.ProtoReflect.Descriptor instead.
+func (*Timeout) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Timeout) GetHighQC() *QC {
+	if x != nil {
+		return x.HighQC
+	}
+	return nil
+}
+
+func (x *Timeout) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *Timeout) GetAuthor() []byte {
+	if x != nil {
+		return x.Author
+	}
+	return nil
+}
+
+func (x *Timeout) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+type ConsensusMessage_TestMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Messagetext   string                 `protobuf:"bytes,1,opt,name=messagetext,proto3" json:"messagetext,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ConsensusMessage_Test) Reset() {
-	*x = ConsensusMessage_Test{}
-	mi := &file_consensus_proto_msgTypes[1]
+func (x *ConsensusMessage_TestMessage) Reset() {
+	*x = ConsensusMessage_TestMessage{}
+	mi := &file_consensus_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ConsensusMessage_Test) String() string {
+func (x *ConsensusMessage_TestMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ConsensusMessage_Test) ProtoMessage() {}
+func (*ConsensusMessage_TestMessage) ProtoMessage() {}
 
-func (x *ConsensusMessage_Test) ProtoReflect() protoreflect.Message {
-	mi := &file_consensus_proto_msgTypes[1]
+func (x *ConsensusMessage_TestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,40 +547,40 @@ func (x *ConsensusMessage_Test) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ConsensusMessage_Test.ProtoReflect.Descriptor instead.
-func (*ConsensusMessage_Test) Descriptor() ([]byte, []int) {
+// Deprecated: Use ConsensusMessage_TestMessage.ProtoReflect.Descriptor instead.
+func (*ConsensusMessage_TestMessage) Descriptor() ([]byte, []int) {
 	return file_consensus_proto_rawDescGZIP(), []int{0, 0}
 }
 
-func (x *ConsensusMessage_Test) GetMessagetext() string {
+func (x *ConsensusMessage_TestMessage) GetMessagetext() string {
 	if x != nil {
 		return x.Messagetext
 	}
 	return ""
 }
 
-type ConsensusMessage_Propose struct {
+type ConsensusMessage_ProposeMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Empty         string                 `protobuf:"bytes,1,opt,name=empty,proto3" json:"empty,omitempty"`
+	ProposedBlock *Block                 `protobuf:"bytes,1,opt,name=proposedBlock,proto3" json:"proposedBlock,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ConsensusMessage_Propose) Reset() {
-	*x = ConsensusMessage_Propose{}
-	mi := &file_consensus_proto_msgTypes[2]
+func (x *ConsensusMessage_ProposeMessage) Reset() {
+	*x = ConsensusMessage_ProposeMessage{}
+	mi := &file_consensus_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ConsensusMessage_Propose) String() string {
+func (x *ConsensusMessage_ProposeMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ConsensusMessage_Propose) ProtoMessage() {}
+func (*ConsensusMessage_ProposeMessage) ProtoMessage() {}
 
-func (x *ConsensusMessage_Propose) ProtoReflect() protoreflect.Message {
-	mi := &file_consensus_proto_msgTypes[2]
+func (x *ConsensusMessage_ProposeMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -179,31 +591,312 @@ func (x *ConsensusMessage_Propose) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ConsensusMessage_Propose.ProtoReflect.Descriptor instead.
-func (*ConsensusMessage_Propose) Descriptor() ([]byte, []int) {
+// Deprecated: Use ConsensusMessage_ProposeMessage.ProtoReflect.Descriptor instead.
+func (*ConsensusMessage_ProposeMessage) Descriptor() ([]byte, []int) {
 	return file_consensus_proto_rawDescGZIP(), []int{0, 1}
 }
 
-func (x *ConsensusMessage_Propose) GetEmpty() string {
+func (x *ConsensusMessage_ProposeMessage) GetProposedBlock() *Block {
 	if x != nil {
-		return x.Empty
+		return x.ProposedBlock
 	}
-	return ""
+	return nil
+}
+
+type ConsensusMessage_VoteMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	V             *Vote                  `protobuf:"bytes,1,opt,name=v,proto3" json:"v,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsensusMessage_VoteMessage) Reset() {
+	*x = ConsensusMessage_VoteMessage{}
+	mi := &file_consensus_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsensusMessage_VoteMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsensusMessage_VoteMessage) ProtoMessage() {}
+
+func (x *ConsensusMessage_VoteMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsensusMessage_VoteMessage.ProtoReflect.Descriptor instead.
+func (*ConsensusMessage_VoteMessage) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{0, 2}
+}
+
+func (x *ConsensusMessage_VoteMessage) GetV() *Vote {
+	if x != nil {
+		return x.V
+	}
+	return nil
+}
+
+type ConsensusMessage_TimeoutMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	T             *Timeout               `protobuf:"bytes,1,opt,name=t,proto3" json:"t,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsensusMessage_TimeoutMessage) Reset() {
+	*x = ConsensusMessage_TimeoutMessage{}
+	mi := &file_consensus_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsensusMessage_TimeoutMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsensusMessage_TimeoutMessage) ProtoMessage() {}
+
+func (x *ConsensusMessage_TimeoutMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsensusMessage_TimeoutMessage.ProtoReflect.Descriptor instead.
+func (*ConsensusMessage_TimeoutMessage) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{0, 3}
+}
+
+func (x *ConsensusMessage_TimeoutMessage) GetT() *Timeout {
+	if x != nil {
+		return x.T
+	}
+	return nil
+}
+
+type ConsensusMessage_TCMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TimeoutCert   *TC                    `protobuf:"bytes,1,opt,name=timeoutCert,proto3" json:"timeoutCert,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsensusMessage_TCMessage) Reset() {
+	*x = ConsensusMessage_TCMessage{}
+	mi := &file_consensus_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsensusMessage_TCMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsensusMessage_TCMessage) ProtoMessage() {}
+
+func (x *ConsensusMessage_TCMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsensusMessage_TCMessage.ProtoReflect.Descriptor instead.
+func (*ConsensusMessage_TCMessage) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{0, 4}
+}
+
+func (x *ConsensusMessage_TCMessage) GetTimeoutCert() *TC {
+	if x != nil {
+		return x.TimeoutCert
+	}
+	return nil
+}
+
+type ConsensusMessage_SyncRequestMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Digest        []byte                 `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
+	Publickey     []byte                 `protobuf:"bytes,2,opt,name=publickey,proto3" json:"publickey,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsensusMessage_SyncRequestMessage) Reset() {
+	*x = ConsensusMessage_SyncRequestMessage{}
+	mi := &file_consensus_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsensusMessage_SyncRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsensusMessage_SyncRequestMessage) ProtoMessage() {}
+
+func (x *ConsensusMessage_SyncRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsensusMessage_SyncRequestMessage.ProtoReflect.Descriptor instead.
+func (*ConsensusMessage_SyncRequestMessage) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{0, 5}
+}
+
+func (x *ConsensusMessage_SyncRequestMessage) GetDigest() []byte {
+	if x != nil {
+		return x.Digest
+	}
+	return nil
+}
+
+func (x *ConsensusMessage_SyncRequestMessage) GetPublickey() []byte {
+	if x != nil {
+		return x.Publickey
+	}
+	return nil
+}
+
+type TC_AuthorityTimeoutRound struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          []byte                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Round         uint64                 `protobuf:"varint,2,opt,name=round,proto3" json:"round,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TC_AuthorityTimeoutRound) Reset() {
+	*x = TC_AuthorityTimeoutRound{}
+	mi := &file_consensus_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TC_AuthorityTimeoutRound) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TC_AuthorityTimeoutRound) ProtoMessage() {}
+
+func (x *TC_AuthorityTimeoutRound) ProtoReflect() protoreflect.Message {
+	mi := &file_consensus_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TC_AuthorityTimeoutRound.ProtoReflect.Descriptor instead.
+func (*TC_AuthorityTimeoutRound) Descriptor() ([]byte, []int) {
+	return file_consensus_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *TC_AuthorityTimeoutRound) GetName() []byte {
+	if x != nil {
+		return x.Name
+	}
+	return nil
+}
+
+func (x *TC_AuthorityTimeoutRound) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
 }
 
 var File_consensus_proto protoreflect.FileDescriptor
 
 const file_consensus_proto_rawDesc = "" +
 	"\n" +
-	"\x0fconsensus.proto\x12\tconsensus\"\xed\x01\n" +
-	"\x10ConsensusMessage\x12@\n" +
-	"\ttestfield\x18\x01 \x01(\v2 .consensus.ConsensusMessage.TestH\x00R\ttestfield\x12A\n" +
-	"\bproposal\x18\x02 \x01(\v2#.consensus.ConsensusMessage.ProposeH\x00R\bproposal\x1a(\n" +
-	"\x04Test\x12 \n" +
-	"\vmessagetext\x18\x01 \x01(\tR\vmessagetext\x1a\x1f\n" +
-	"\aPropose\x12\x14\n" +
-	"\x05empty\x18\x01 \x01(\tR\x05emptyB\t\n" +
-	"\amessageB\x0fZ\r./consensuspbb\x06proto3"
+	"\x0fconsensus.proto\x12\tconsensus\"\xbf\x06\n" +
+	"\x10ConsensusMessage\x12G\n" +
+	"\ttestfield\x18\x01 \x01(\v2'.consensus.ConsensusMessage.TestMessageH\x00R\ttestfield\x12H\n" +
+	"\bproposal\x18\x02 \x01(\v2*.consensus.ConsensusMessage.ProposeMessageH\x00R\bproposal\x12E\n" +
+	"\bvMessage\x18\x03 \x01(\v2'.consensus.ConsensusMessage.VoteMessageH\x00R\bvMessage\x12H\n" +
+	"\btMessage\x18\x04 \x01(\v2*.consensus.ConsensusMessage.TimeoutMessageH\x00R\btMessage\x12E\n" +
+	"\ttcMessage\x18\x05 \x01(\v2%.consensus.ConsensusMessage.TCMessageH\x00R\ttcMessage\x12N\n" +
+	"\tsrMessage\x18\x06 \x01(\v2..consensus.ConsensusMessage.SyncRequestMessageH\x00R\tsrMessage\x1a/\n" +
+	"\vTestMessage\x12 \n" +
+	"\vmessagetext\x18\x01 \x01(\tR\vmessagetext\x1aH\n" +
+	"\x0eProposeMessage\x126\n" +
+	"\rproposedBlock\x18\x01 \x01(\v2\x10.consensus.BlockR\rproposedBlock\x1a,\n" +
+	"\vVoteMessage\x12\x1d\n" +
+	"\x01v\x18\x01 \x01(\v2\x0f.consensus.VoteR\x01v\x1a2\n" +
+	"\x0eTimeoutMessage\x12 \n" +
+	"\x01t\x18\x01 \x01(\v2\x12.consensus.TimeoutR\x01t\x1a<\n" +
+	"\tTCMessage\x12/\n" +
+	"\vtimeoutCert\x18\x01 \x01(\v2\r.consensus.TCR\vtimeoutCert\x1aJ\n" +
+	"\x12SyncRequestMessage\x12\x16\n" +
+	"\x06digest\x18\x01 \x01(\fR\x06digest\x12\x1c\n" +
+	"\tpublickey\x18\x02 \x01(\fR\tpublickeyB\t\n" +
+	"\amessage\"\xe2\x01\n" +
+	"\x05Block\x12-\n" +
+	"\n" +
+	"quorumCert\x18\x01 \x01(\v2\r.consensus.QCR\n" +
+	"quorumCert\x124\n" +
+	"\vtimeoutCert\x18\x02 \x01(\v2\r.consensus.TCH\x00R\vtimeoutCert\x88\x01\x01\x12\x16\n" +
+	"\x06author\x18\x03 \x01(\fR\x06author\x12\x14\n" +
+	"\x05round\x18\x04 \x01(\x04R\x05round\x12\x18\n" +
+	"\apayload\x18\x05 \x03(\fR\apayload\x12\x1c\n" +
+	"\tsignature\x18\x06 \x01(\fR\tsignatureB\x0e\n" +
+	"\f_timeoutCert\"d\n" +
+	"\x02QC\x12\x12\n" +
+	"\x04hash\x18\x01 \x01(\fR\x04hash\x12\x14\n" +
+	"\x05round\x18\x02 \x01(\x04R\x05round\x12\x16\n" +
+	"\x06voters\x18\x03 \x03(\fR\x06voters\x12\x1c\n" +
+	"\tsignature\x18\x04 \x01(\fR\tsignature\"f\n" +
+	"\x04Vote\x12\x12\n" +
+	"\x04hash\x18\x01 \x01(\fR\x04hash\x12\x14\n" +
+	"\x05round\x18\x02 \x01(\x04R\x05round\x12\x16\n" +
+	"\x06author\x18\x03 \x01(\fR\x06author\x12\x1c\n" +
+	"\tsignature\x18\x04 \x01(\fR\tsignature\"\xb4\x01\n" +
+	"\x02TC\x12\x14\n" +
+	"\x05round\x18\x01 \x01(\x04R\x05round\x127\n" +
+	"\x04atrs\x18\x02 \x03(\v2#.consensus.TC.AuthorityTimeoutRoundR\x04atrs\x12\x1c\n" +
+	"\tsignature\x18\x03 \x01(\fR\tsignature\x1aA\n" +
+	"\x15AuthorityTimeoutRound\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\fR\x04name\x12\x14\n" +
+	"\x05round\x18\x02 \x01(\x04R\x05round\"|\n" +
+	"\aTimeout\x12%\n" +
+	"\x06highQC\x18\x01 \x01(\v2\r.consensus.QCR\x06highQC\x12\x14\n" +
+	"\x05round\x18\x02 \x01(\x04R\x05round\x12\x16\n" +
+	"\x06author\x18\x03 \x01(\fR\x06author\x12\x1c\n" +
+	"\tsignature\x18\x04 \x01(\fR\tsignatureB\x0fZ\r./consensuspbb\x06proto3"
 
 var (
 	file_consensus_proto_rawDescOnce sync.Once
@@ -217,20 +910,42 @@ func file_consensus_proto_rawDescGZIP() []byte {
 	return file_consensus_proto_rawDescData
 }
 
-var file_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_consensus_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_consensus_proto_goTypes = []any{
-	(*ConsensusMessage)(nil),         // 0: consensus.ConsensusMessage
-	(*ConsensusMessage_Test)(nil),    // 1: consensus.ConsensusMessage.Test
-	(*ConsensusMessage_Propose)(nil), // 2: consensus.ConsensusMessage.Propose
+	(*ConsensusMessage)(nil),                    // 0: consensus.ConsensusMessage
+	(*Block)(nil),                               // 1: consensus.Block
+	(*QC)(nil),                                  // 2: consensus.QC
+	(*Vote)(nil),                                // 3: consensus.Vote
+	(*TC)(nil),                                  // 4: consensus.TC
+	(*Timeout)(nil),                             // 5: consensus.Timeout
+	(*ConsensusMessage_TestMessage)(nil),        // 6: consensus.ConsensusMessage.TestMessage
+	(*ConsensusMessage_ProposeMessage)(nil),     // 7: consensus.ConsensusMessage.ProposeMessage
+	(*ConsensusMessage_VoteMessage)(nil),        // 8: consensus.ConsensusMessage.VoteMessage
+	(*ConsensusMessage_TimeoutMessage)(nil),     // 9: consensus.ConsensusMessage.TimeoutMessage
+	(*ConsensusMessage_TCMessage)(nil),          // 10: consensus.ConsensusMessage.TCMessage
+	(*ConsensusMessage_SyncRequestMessage)(nil), // 11: consensus.ConsensusMessage.SyncRequestMessage
+	(*TC_AuthorityTimeoutRound)(nil),            // 12: consensus.TC.AuthorityTimeoutRound
 }
 var file_consensus_proto_depIdxs = []int32{
-	1, // 0: consensus.ConsensusMessage.testfield:type_name -> consensus.ConsensusMessage.Test
-	2, // 1: consensus.ConsensusMessage.proposal:type_name -> consensus.ConsensusMessage.Propose
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6,  // 0: consensus.ConsensusMessage.testfield:type_name -> consensus.ConsensusMessage.TestMessage
+	7,  // 1: consensus.ConsensusMessage.proposal:type_name -> consensus.ConsensusMessage.ProposeMessage
+	8,  // 2: consensus.ConsensusMessage.vMessage:type_name -> consensus.ConsensusMessage.VoteMessage
+	9,  // 3: consensus.ConsensusMessage.tMessage:type_name -> consensus.ConsensusMessage.TimeoutMessage
+	10, // 4: consensus.ConsensusMessage.tcMessage:type_name -> consensus.ConsensusMessage.TCMessage
+	11, // 5: consensus.ConsensusMessage.srMessage:type_name -> consensus.ConsensusMessage.SyncRequestMessage
+	2,  // 6: consensus.Block.quorumCert:type_name -> consensus.QC
+	4,  // 7: consensus.Block.timeoutCert:type_name -> consensus.TC
+	12, // 8: consensus.TC.atrs:type_name -> consensus.TC.AuthorityTimeoutRound
+	2,  // 9: consensus.Timeout.highQC:type_name -> consensus.QC
+	1,  // 10: consensus.ConsensusMessage.ProposeMessage.proposedBlock:type_name -> consensus.Block
+	3,  // 11: consensus.ConsensusMessage.VoteMessage.v:type_name -> consensus.Vote
+	5,  // 12: consensus.ConsensusMessage.TimeoutMessage.t:type_name -> consensus.Timeout
+	4,  // 13: consensus.ConsensusMessage.TCMessage.timeoutCert:type_name -> consensus.TC
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_consensus_proto_init() }
@@ -241,14 +956,19 @@ func file_consensus_proto_init() {
 	file_consensus_proto_msgTypes[0].OneofWrappers = []any{
 		(*ConsensusMessage_Testfield)(nil),
 		(*ConsensusMessage_Proposal)(nil),
+		(*ConsensusMessage_VMessage)(nil),
+		(*ConsensusMessage_TMessage)(nil),
+		(*ConsensusMessage_TcMessage)(nil),
+		(*ConsensusMessage_SrMessage)(nil),
 	}
+	file_consensus_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_consensus_proto_rawDesc), len(file_consensus_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

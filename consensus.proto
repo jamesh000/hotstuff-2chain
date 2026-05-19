@@ -4,16 +4,78 @@ package consensus;
 option go_package = "./consensuspb";
 
 message ConsensusMessage {
-        message Test {
+        message TestMessage {
                 string messagetext = 1;
         }
 
-        message Propose {
-                string empty = 1;
+        message ProposeMessage {
+                Block proposedBlock = 1;
+        }
+
+        message VoteMessage {
+                Vote v = 1;
+        }
+
+        message TimeoutMessage {
+                Timeout t = 1;
+        }
+
+        message TCMessage {
+                TC timeoutCert = 1;
+        }
+
+        message SyncRequestMessage {
+                bytes digest = 1;
+                bytes publickey = 2;
         }
 
         oneof message {
-              Test testfield = 1;
-              Propose proposal = 2;
+              TestMessage testfield = 1;
+              ProposeMessage proposal = 2;
+              VoteMessage vMessage = 3;
+              TimeoutMessage tMessage = 4;
+              TCMessage tcMessage = 5;
+              SyncRequestMessage srMessage = 6;
         }
+}
+
+message Block {
+        QC quorumCert = 1;
+        optional TC timeoutCert = 2;
+        bytes author = 3;
+        uint64 round = 4;
+        repeated bytes payload = 5;
+        bytes signature = 6;
+}
+
+message QC {
+        bytes hash = 1;
+        uint64 round = 2;
+        repeated bytes voters = 3;
+        bytes signature = 4;
+}
+
+message Vote {
+        bytes hash = 1;
+        uint64 round = 2;
+        bytes author = 3;
+        bytes signature = 4;
+}
+
+message TC {
+        message AuthorityTimeoutRound {
+                bytes name = 1;
+                uint64 round = 2;
+        }
+
+        uint64 round = 1;
+        repeated AuthorityTimeoutRound atrs = 2;
+        bytes signature = 3;
+}
+
+message Timeout {
+        QC highQC = 1;
+        uint64 round = 2;
+        bytes author = 3;
+        bytes signature = 4;
 }

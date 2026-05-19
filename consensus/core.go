@@ -98,8 +98,11 @@ func (c *Core) run() {
 
 		line := scanner.Text()
 
-		testMsg := TestMessage{message: line}
-		data, err := testMsg.SerializeConsensusMessage()
+		lineDigest := crypto.NewDigest([]byte(line))
+
+		testBlock := NewBlock(QC{}, nil, c.name, c.round, []crypto.Digest{lineDigest}, c.signatureService)
+		proposal := ProposeMessage{testBlock}
+		data, err := proposal.SerializeConsensusMessage()
 		if err != nil {
 			panic(err)
 		}
