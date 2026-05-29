@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	pb "github.com/jamesh000/hotstuff-2chain/consensuspb"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/mempool"
 	"github.com/jamesh000/hotstuff-2chain/network"
 	"github.com/jamesh000/hotstuff-2chain/store"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-msgio"
-	"google.golang.org/protobuf/proto"
 )
 
 // Should be be this if running in a serious libp2p network
@@ -22,75 +20,6 @@ const CHANNEL_CAPACITY = 1000
 
 // consensus round number
 type Round = uint64
-
-type ConsensusMessage interface {
-	SerializeConsensusMessage() ([]byte, error)
-}
-
-type TestMessage struct {
-	message string
-}
-
-func (msg TestMessage) SerializeConsensusMessage() ([]byte, error) {
-	testmsg := &pb.ConsensusMessage{
-		Message: &pb.ConsensusMessage_Testfield{
-			Testfield: &pb.ConsensusMessage_TestMessage{
-				Messagetext: msg.message,
-			},
-		},
-	}
-
-	data, err := proto.Marshal(testmsg)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-type ProposeMessage struct {
-	block Block
-}
-
-func (msg ProposeMessage) SerializeConsensusMessage() ([]byte, error) {
-	proposeMessage := &pb.ConsensusMessage{
-		Message: &pb.ConsensusMessage_Proposal{
-			Proposal: &pb.ConsensusMessage_ProposeMessage{
-				ProposedBlock: msg.block.toProto(),
-			},
-		},
-	}
-
-	data, err := proto.Marshal(proposeMessage)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func DeserializeConsensusMessage(data []byte) (ConsensusMessage, error) {
-	msg := &pb.ConsensusMessage{}
-	err := proto.Unmarshal(data, msg)
-	if err != nil {
-		return nil, err
-	}
-
-	switch msg.Message.(type) {
-	case *pb.ConsensusMessage_Testfield:
-		newTestMsg := &TestMessage{
-			message: msg.GetTestfield().GetMessagetext(),
-		}
-
-		return newTestMsg, nil
-	case *pb.ConsensusMessage_Proposal:
-		return nil, fmt.Errorf("Proposal deserialization is not implemented yet")
-	default:
-		log.Fatal("Erroneous consensus message type")
-	}
-
-	return nil, fmt.Errorf("End of the line")
-}
 
 func SpawnConsensus(
 	name crypto.PublicKey,
@@ -103,10 +32,10 @@ func SpawnConsensus(
 	txMempool chan<- mempool.ConsensusMessage,
 	txCommit chan<- Block,
 ) {
-	consensusCh := make(chan ConsensusMessage, CHANNEL_CAPACITY)
+	consensusCh := make(chan consensusMessage, CHANNEL_CAPACITY)
 	loopbackCh := make(chan Block, CHANNEL_CAPACITY)
 	proposerCh := make(chan ProposerMessage, CHANNEL_CAPACITY)
-	helperCh := make(chan HelperMessage, CHANNEL_CAPACITY)
+	helperCh := make(chan helperMessage, CHANNEL_CAPACITY)
 
 	network.SpawnReceiver(
 		host,
@@ -141,37 +70,36 @@ func SpawnConsensus(
 	// Spawn the proposer (not implmented)
 	//spawnProposer
 
-	// Spawn the Helper (not implemented
-	//spawnHelper
+	// Spawn the Helper
+	SpawnHelper(committee, store, helperCh, host)
 }
 
 type ConsensusReceiverHandler struct {
-	txConsensus chan<- ConsensusMessage
-	txHelper    chan<- HelperMessage
+	txConsensus chan<- consensusMessage
+	txHelper    chan<- helperMessage
 
 	// temporary for debugging
 	committee Committee
 }
 
 func (c ConsensusReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte) error {
+	// Deserialize the message
 	consensusMsg, err := DeserializeConsensusMessage(msg)
 	if err != nil {
 		panic(err)
 	}
 
-	switch messageContents := consensusMsg.(type) {
-	case *TestMessage:
-		fmt.Println(messageContents.message)
-	case *ProposeMessage:
-		fmt.Printf("Got %v", messageContents.block)
-		err := messageContents.block.Verify(c.committee)
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Println("Block is verified")
-		}
+	// Parse the message
+	switch msg := consensusMsg.(type) {
+	case *testMessage:
+		fmt.Println(msg.message)
+	case *syncRequestMessage:
+		c.txHelper <- helperMessage{msg.missing, msg.origin}
+	case *proposeMessage:
+		writer.WriteMsg([]byte("Ack"))
+		c.txConsensus <- msg
 	default:
-		fmt.Println("Something terrible has occured")
+		c.txConsensus <- msg
 	}
 
 	return nil

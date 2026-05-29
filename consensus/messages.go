@@ -5,7 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	pb "github.com/jamesh000/hotstuff-2chain/consensuspb"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"google.golang.org/protobuf/proto"
 )
 
 type Block struct {
@@ -77,6 +79,32 @@ func (b Block) Digest() crypto.Digest {
 	}
 
 	return crypto.NewDigest(buf.Bytes())
+}
+
+func (b Block) Serialize() ([]byte, error) {
+	pblock := b.toProto()
+
+	data, err := proto.Marshal(pblock)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (b *Block) Deserialize(data []byte) (*Block, error) {
+	pblock := &pb.Block{}
+	err := proto.Unmarshal(data, pblock)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err = blockFromProto(pblock)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
 
 func (b Block) String() string {

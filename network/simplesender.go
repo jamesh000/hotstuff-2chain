@@ -51,15 +51,17 @@ func (sender SimpleSender) Broadcast(pids []peer.ID, data []byte) {
 }
 
 func (sender SimpleSender) LuckyBroadCast(pids []peer.ID, data []byte, nodes uint) {
-	rand.Shuffle(len(pids), func(i, j int) {
-		pids[i], pids[j] = pids[j], pids[i]
+	shuffledPids := make([]peer.ID, len(pids))
+	copy(shuffledPids, pids)
+	rand.Shuffle(len(shuffledPids), func(i, j int) {
+		shuffledPids[i], shuffledPids[j] = shuffledPids[j], shuffledPids[i]
 	})
 
-	if nodes < uint(len(pids)) {
-		pids = pids[:nodes]
+	if nodes < uint(len(shuffledPids)) {
+		shuffledPids = shuffledPids[:nodes]
 	}
 
-	sender.Broadcast(pids, data)
+	sender.Broadcast(shuffledPids, data)
 }
 
 type connChannels struct {

@@ -10,7 +10,9 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-libp2p/core/routing"
+	"github.com/libp2p/go-msgio"
 	multiaddr "github.com/multiformats/go-multiaddr"
 )
 
@@ -72,4 +74,27 @@ func NewRoutedHost(ctx context.Context, addr string, priv crypto.PrivKey, bsPeer
 	}
 
 	return &RoutedHost{h, dht}, nil
+}
+
+func (host RoutedHost) dhtConnect(ctx context.Context, pid peer.ID, proto protocol.ID) (msgio.ReadWriteCloser, error) {
+	peerInfo := host.node.Peerstore().PeerInfo(pid)
+
+	if len(peerInfo.Addrs) == 0 {
+		var err error
+		peerInfo, err = host.dht.FindPeer(ctx, pid)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := host.node.Connect(ctx, peerInfo); err != nil {
+		return nil, err
+	}
+
+	stream, err := host.node.NewStream(ctx, pid, proto)
+	if err != nil {
+		return nil, err
+	}
+
+	return msgio.NewReadWriter(stream), nil
 }

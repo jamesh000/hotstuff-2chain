@@ -71,8 +71,9 @@ func (c Committee) QuorumThreshold() Stake {
 	return totalStake
 }
 
-func (c Committee) Address(name crypto.PublicKey) interface{} {
-	return c.Authorities[name].Address
+func (c Committee) Address(name crypto.PublicKey) (peer.ID, bool) {
+	authority, ok := c.Authorities[name]
+	return authority.Address, ok
 }
 
 func (c Committee) BroadcastAddresses(myself crypto.PublicKey) []peer.ID {

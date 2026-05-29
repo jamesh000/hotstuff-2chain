@@ -4,12 +4,14 @@ go 1.25.7
 
 require (
 	github.com/cockroachdb/pebble v1.1.5
+	github.com/gammazero/deque v1.2.1
 	github.com/libp2p/go-libp2p v0.48.0
 	github.com/libp2p/go-libp2p-kad-dht v0.39.0
 	github.com/libp2p/go-msgio v0.3.0
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/supranational/blst v0.3.16
 	github.com/urfave/cli/v3 v3.9.0
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -128,6 +130,5 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.43.0 // indirect
 	gonum.org/v1/gonum v0.17.0 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	lukechampine.com/blake3 v1.4.1 // indirect
 )

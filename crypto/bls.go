@@ -18,7 +18,9 @@ type blstAggregateSignature = blst.P2Aggregate
 
 type blstSecretKey = blst.SecretKey
 
-type PublicKey [48]byte
+const PUBLICKEY_LEN = 48
+
+type PublicKey [PUBLICKEY_LEN]byte
 
 func (pk PublicKey) encodeBase64() string {
 	return base64.StdEncoding.Strict().EncodeToString(pk[:])
@@ -43,20 +45,19 @@ func (pk PublicKey) String() string {
 	return pk.encodeBase64()
 }
 
-func (pk PublicKey) MarshalText() ([]byte, error) {
-	return []byte(pk.encodeBase64()), nil
-}
-
-func (pk *PublicKey) UnmarshalText(data []byte) error {
-	err := pk.decodeBase64(string(data))
-	if err != nil {
-		return err
+func (pk *PublicKey) FromBytes(data []byte) (*PublicKey, error) {
+	if len(data) != PUBLICKEY_LEN {
+		return nil, fmt.Errorf("Signature is wrong length")
 	}
 
-	return nil
+	copy(pk[:], data)
+
+	return pk, nil
 }
 
-type SecretKey [32]byte
+const SECRETKEY_LEN = 32
+
+type SecretKey [SECRETKEY_LEN]byte
 
 func (sk SecretKey) encodeBase64() string {
 	return base64.StdEncoding.Strict().EncodeToString(sk[:])
@@ -77,17 +78,14 @@ func (sk *SecretKey) decodeBase64(s string) error {
 	return nil
 }
 
-func (sk SecretKey) MarshalText() ([]byte, error) {
-	return []byte(sk.encodeBase64()), nil
-}
-
-func (sk *SecretKey) UnmarshalText(data []byte) error {
-	err := sk.decodeBase64(string(data))
-	if err != nil {
-		return err
+func (sk *SecretKey) FromBytes(data []byte) (*SecretKey, error) {
+	if len(data) != SECRETKEY_LEN {
+		return nil, fmt.Errorf("Signature is wrong length")
 	}
 
-	return nil
+	copy(sk[:], data)
+
+	return sk, nil
 }
 
 func GenerateKeypair() (SecretKey, PublicKey) {
@@ -105,7 +103,19 @@ func GenerateKeypair() (SecretKey, PublicKey) {
 	return sk, pk
 }
 
-type Signature [96]byte
+const SIGNATURE_LEN = 96
+
+type Signature [SIGNATURE_LEN]byte
+
+func (s *Signature) FromBytes(data []byte) (*Signature, error) {
+	if len(data) != SIGNATURE_LEN {
+		return nil, fmt.Errorf("Signature is wrong length")
+	}
+
+	copy(s[:], data)
+
+	return s, nil
+}
 
 func Sign(d Digest, sk SecretKey) Signature {
 	bsk := new(blstSecretKey).Deserialize(sk[:])

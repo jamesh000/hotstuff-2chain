@@ -19,7 +19,7 @@ type Core struct {
 	leaderElector    leaderElector
 	mempoolDriver    MempoolDriver
 	//synchronizer Synchronizer
-	rxMessage          <-chan ConsensusMessage
+	rxMessage          <-chan consensusMessage
 	rxLoopback         <-chan Block
 	txProposer         chan<- ProposerMessage
 	txCommit           chan<- Block
@@ -42,7 +42,7 @@ func SpawnCore(
 	mempoolDriver MempoolDriver,
 	//synchronizer Synchronizer,
 	timeoutDelay uint64,
-	rxMessage <-chan ConsensusMessage,
+	rxMessage <-chan consensusMessage,
 	rxLoopback <-chan Block,
 	txProposer chan<- ProposerMessage,
 	txCommit chan<- Block,
@@ -101,7 +101,8 @@ func (c *Core) run() {
 		lineDigest := crypto.NewDigest([]byte(line))
 
 		testBlock := NewBlock(QC{}, nil, c.name, c.round, []crypto.Digest{lineDigest}, c.signatureService)
-		proposal := ProposeMessage{testBlock}
+		fmt.Printf("Proposing block %v\n", testBlock)
+		proposal := proposeMessage{testBlock}
 		data, err := proposal.SerializeConsensusMessage()
 		if err != nil {
 			panic(err)
