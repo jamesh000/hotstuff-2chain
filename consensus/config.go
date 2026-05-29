@@ -76,14 +76,16 @@ func (c Committee) Address(name crypto.PublicKey) (peer.ID, bool) {
 	return authority.Address, ok
 }
 
-func (c Committee) BroadcastAddresses(myself crypto.PublicKey) []peer.ID {
+func (c Committee) BroadcastAddresses(myself crypto.PublicKey) ([]crypto.PublicKey, []peer.ID) {
+	names := make([]crypto.PublicKey, 0, len(c.Authorities))
 	addresses := make([]peer.ID, 0, len(c.Authorities))
 
 	for pk, a := range c.Authorities {
 		if pk != myself {
+			names = append(names, pk)
 			addresses = append(addresses, a.Address)
 		}
 	}
 
-	return addresses
+	return names, addresses
 }

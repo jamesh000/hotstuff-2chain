@@ -108,7 +108,8 @@ func (c *Core) run() {
 			panic(err)
 		}
 
-		c.network.Broadcast(c.committee.BroadcastAddresses(c.name), data)
+		_, addresses := c.committee.BroadcastAddresses(c.name)
+		c.network.Broadcast(addresses, data)
 	}
 
 	if err := scanner.Err(); err != nil {

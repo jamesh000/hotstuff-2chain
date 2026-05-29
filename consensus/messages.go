@@ -35,8 +35,15 @@ func NewBlock(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []cry
 	return block
 }
 
-func (Block) Genesis() Block {
-	return Block{}
+func GenesisBlock() Block {
+	return Block{
+		Qc:        GenesisQC(),
+		Tc:        nil,
+		Author:    crypto.PublicKey{},
+		Round:     0,
+		Payload:   nil,
+		Signature: crypto.Signature{},
+	}
 }
 
 func (b Block) Parent() crypto.Digest {

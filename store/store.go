@@ -1,6 +1,8 @@
 package store
 
 import (
+	"errors"
+
 	"github.com/cockroachdb/pebble"
 )
 
@@ -8,6 +10,8 @@ const CHANNEL_CAPACITY = 100
 
 type Key = []uint8
 type Value = []uint8
+
+var ErrNotFound = errors.New("value not found in store")
 
 type commandType uint
 
@@ -61,6 +65,9 @@ func NewStore(path string) (*Store, error) {
 			case readCommand:
 				val, closer, err := db.Get(cmd.key)
 				if err != nil {
+					if err == pebble.ErrNotFound {
+						err = ErrNotFound
+					}
 					cmd.response <- storeResult{nil, err}
 					continue
 				}

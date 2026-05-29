@@ -108,7 +108,7 @@ func (c reliableConnection) run() {
 		if err != nil {
 			log.Printf("Failed to connect to peer %v: %v\n", c.address, err)
 
-			timer := time.NewTimer(time.Duration(c.retryDelay))
+			timer := time.NewTimer(time.Duration(c.retryDelay) * time.Millisecond)
 
 		waiter:
 			for {
