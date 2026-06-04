@@ -34,22 +34,31 @@ func SpawnConsensus(
 ) {
 	consensusCh := make(chan consensusMessage, CHANNEL_CAPACITY)
 	loopbackCh := make(chan Block, CHANNEL_CAPACITY)
-	proposerCh := make(chan ProposerMessage, CHANNEL_CAPACITY)
+	proposerCh := make(chan proposerMessage, CHANNEL_CAPACITY)
 	helperCh := make(chan helperMessage, CHANNEL_CAPACITY)
 
 	network.SpawnReceiver(
 		host,
-		ConsensusReceiverHandler{consensusCh, helperCh, committee},
+		ConsensusReceiverHandler{consensusCh, helperCh},
 		protocol.ID(CONSENSUS_PROTOCOL),
 	)
 	log.Printf("Node %v listening to consensus messages with peerid %v", name, host.ID())
 
 	leaderElector := NewRRLeaderElector(committee)
 
+	// Create the mempool driver
 	mempoolDriver := NewMempoolDriver(store, txMempool, loopbackCh)
 
-	// Not yet implemented
-	//synchronizer := nil
+	// Create the synchronizer
+	synchronizer := NewSynchronizer(
+		name,
+		committee,
+		store,
+		loopbackCh,
+		parameters.SyncRetryDelay,
+		host,
+		protocol.ID(CONSENSUS_PROTOCOL),
+	)
 
 	SpawnCore(
 		name,
@@ -59,7 +68,7 @@ func SpawnConsensus(
 		store,
 		leaderElector,
 		mempoolDriver,
-		//synchronizer,
+		synchronizer,
 		parameters.TimeoutDelay,
 		consensusCh,
 		loopbackCh,
@@ -67,8 +76,17 @@ func SpawnConsensus(
 		txCommit,
 	)
 
-	// Spawn the proposer (not implmented)
-	//spawnProposer
+	// Spawn the proposer
+	spawnProposer(
+		name,
+		committee,
+		signatureService,
+		rxMempool,
+		proposerCh,
+		loopbackCh,
+		host,
+		protocol.ID(CONSENSUS_PROTOCOL),
+	)
 
 	// Spawn the Helper
 	SpawnHelper(committee, store, helperCh, host)
@@ -77,9 +95,6 @@ func SpawnConsensus(
 type ConsensusReceiverHandler struct {
 	txConsensus chan<- consensusMessage
 	txHelper    chan<- helperMessage
-
-	// temporary for debugging
-	committee Committee
 }
 
 func (c ConsensusReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte) error {
