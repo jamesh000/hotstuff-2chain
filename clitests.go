@@ -80,7 +80,7 @@ func storeTest(ctx context.Context, cmd *cli.Command) error {
 }
 
 // generate a bunch of secrets
-const secretCount = 10
+const secretCount = 1
 
 func genSecrets(ctx context.Context, cmd *cli.Command) error {
 
@@ -222,5 +222,24 @@ func testRun(ctx context.Context, cmd *cli.Command) error {
 
 	fmt.Println(node)
 
+	node.ProcessBlocks()
+
 	return nil
+}
+
+func fullTest(ctx context.Context, cmd *cli.Command) error {
+	for i := range secretCount {
+		secretFileName := fmt.Sprintf("secret_%v.sc", i)
+		testStoreName := fmt.Sprintf("teststore_%v.sc", i)
+
+		node, err := node.NewNode("testcommittee.cmt", secretFileName, testStoreName, nil)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(node)
+	}
+
+	for {
+	}
 }

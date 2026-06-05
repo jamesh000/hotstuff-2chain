@@ -78,9 +78,15 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 
 	names, addresses := p.committee.BroadcastAddresses(p.name)
 
+	log.Printf("is the genesis: %v\n", block.Qc.IsGenesisQC())
 	message, err := (proposeMessage{block}).SerializeConsensusMessage()
 	if err != nil {
 		panic(err)
+	}
+	msgb, err := DeserializeConsensusMessage(message)
+	switch m := msgb.(type) {
+	case *proposeMessage:
+		log.Printf("is the genesis: %v\n", m.block.Qc.IsGenesisQC())
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

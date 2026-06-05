@@ -358,13 +358,13 @@ func (c *Core) run() {
 		select {
 		case msg := <-c.rxMessage:
 			switch m := msg.(type) {
-			case proposeMessage:
+			case *proposeMessage:
 				result = c.handleProposal(&m.block)
-			case voteMessage:
+			case *voteMessage:
 				result = c.handleVote(&m.vote)
-			case timeoutMessage:
+			case *timeoutMessage:
 				result = c.handleTimeout(&m.timeout)
-			case tcMessage:
+			case *tcMessage:
 				result = c.handleTC(m.tc)
 			default:
 				panic(fmt.Errorf("Unexpected protocol message"))

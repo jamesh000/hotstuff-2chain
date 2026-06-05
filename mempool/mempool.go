@@ -49,7 +49,7 @@ func SpawnMempool(
 				panic(err)
 			}
 
-			log.Printf("Got message \"%v\" from client\n", msg)
+			log.Printf("Got message \"%v\" from client\n", string(msg))
 
 			msgDigest := crypto.NewDigest(msg)
 

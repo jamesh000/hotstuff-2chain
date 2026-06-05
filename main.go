@@ -53,6 +53,16 @@ func main() {
 				Usage:  "Run a test node using generated secrets/committee",
 				Action: testRun,
 			},
+			{
+				Name:   "fulltest",
+				Usage:  "Run multiple test nodes using generated secrets/committee",
+				Action: fullTest,
+			},
+			{
+				Name:   "testclient",
+				Usage:  "Run a test client",
+				Action: testClient,
+			},
 		},
 	}
 

@@ -160,7 +160,7 @@ func (v vote) Digest() crypto.Digest {
 }
 
 func (v vote) String() string {
-	return fmt.Sprintf("Vote(%v, %v, %v", v.author, v.round, v.hash)
+	return fmt.Sprintf("Vote(author: %v, round: %v, block: %", v.author, v.round, v.hash)
 }
 
 type QC struct {
@@ -180,7 +180,7 @@ func GenesisQC() QC {
 }
 
 func (qc QC) IsGenesisQC() bool {
-	return qc.Hash == crypto.Digest{} && qc.Round == 0 && qc.Voters == nil && qc.Signature == crypto.Signature{}
+	return qc.Hash == crypto.Digest{} && qc.Round == 0 && len(qc.Voters) == 0 && qc.Signature == crypto.Signature{}
 }
 
 func (qc QC) Timeout() bool {
@@ -225,7 +225,7 @@ func (qc QC) Digest() crypto.Digest {
 }
 
 func (qc QC) String() string {
-	return fmt.Sprintf("QC(%v, %v)", qc.Hash, qc.Round)
+	return fmt.Sprintf("QC(block: %v, round: %v)", qc.Hash, qc.Round)
 }
 
 type timeout struct {
@@ -277,7 +277,7 @@ func (t timeout) Digest() crypto.Digest {
 }
 
 func (t timeout) String() string {
-	return fmt.Sprintf("TC(%v, %v, %v)", t.author, t.round, t.highQC.Round)
+	return fmt.Sprintf("Timeout(author: %v, round: %v, highqcround: %v)", t.author, t.round, t.highQC.Round)
 }
 
 type authorityTimeoutRound struct {
@@ -340,5 +340,5 @@ func (tc TC) HighQCRounds() []Round {
 }
 
 func (tc TC) String() string {
-	return fmt.Sprintf("TC(%v, %v)", tc.Round, tc.HighQCRounds())
+	return fmt.Sprintf("TC(round: %v, highqcrounds: %v)", tc.Round, tc.HighQCRounds())
 }

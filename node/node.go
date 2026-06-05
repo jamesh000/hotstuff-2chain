@@ -80,3 +80,9 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 	log.Printf("Node %v successfully booted\n", name)
 	return &Node{commit}, nil
 }
+
+func (n *Node) ProcessBlocks() {
+	for block := range n.commit {
+		log.Printf("%v has been committed!\n", block)
+	}
+}

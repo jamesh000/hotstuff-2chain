@@ -15,7 +15,7 @@ type Parameters struct {
 
 func DefaultParameters() Parameters {
 	return Parameters{
-		TimeoutDelay:   5000,
+		TimeoutDelay:   10000,
 		SyncRetryDelay: 10000,
 	}
 }
