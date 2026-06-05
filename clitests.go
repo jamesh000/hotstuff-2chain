@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/cockroachdb/pebble"
@@ -117,6 +119,50 @@ func bootstrapper(ctx context.Context, cmd *cli.Command) error {
 	host.PrintAddrs()
 
 	select {}
+}
+
+func testClient(ctx context.Context, cmd *cli.Command) error {
+	priv, _, err := libp2pcrypto.GenerateEd25519Key(rand.Reader)
+	if err != nil {
+		return err
+	}
+
+	committee, err := node.ReadJSON[node.Committee]("testcommittee.cmt")
+	if err != nil {
+		return err
+	}
+
+	host, err := network.NewRoutedHost(context.Background(), "/ip4/0.0.0.0/tcp/0", priv, committee.BootstrapPeers)
+	if err != nil {
+		return err
+	}
+	ps, err := network.NewPubsub(context.Background(), host, "mempool")
+	if err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		fmt.Print("> ")
+
+		if !scanner.Scan() {
+			// Stop loop on EOF or error
+			break
+		}
+
+		line := scanner.Text()
+
+		fmt.Printf("sending text: %v\n", line)
+
+		ps.Publish(context.Background(), []byte(line))
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func generateCommittee(ctx context.Context, cmd *cli.Command) error {

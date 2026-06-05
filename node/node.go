@@ -20,7 +20,7 @@ type Node struct {
 func NewNode(committeeFile string, keyFile string, storePath string, parameterFile *string) (*Node, error) {
 	commit := make(chan consensus.Block, CHANNEL_CAPACITY)
 	consensusToMempoolCh := make(chan mempool.ConsensusMessage, CHANNEL_CAPACITY)
-	mempoolToConsensus := make(chan crypto.Digest, CHANNEL_CAPACITY)
+	mempoolToConsensusCh := make(chan crypto.Digest, CHANNEL_CAPACITY)
 
 	committee, err := ReadJSON[Committee](committeeFile)
 	if err != nil {
@@ -55,6 +55,16 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 		return nil, err
 	}
 
+	mempool.SpawnMempool(
+		name,
+		host,
+		committee.Mempool,
+		parameters.Mempool,
+		*store,
+		consensusToMempoolCh,
+		mempoolToConsensusCh,
+	)
+
 	consensus.SpawnConsensus(
 		name,
 		*host,
@@ -62,7 +72,7 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 		parameters.Consensus,
 		signatureService,
 		*store,
-		mempoolToConsensus,
+		mempoolToConsensusCh,
 		consensusToMempoolCh,
 		commit,
 	)

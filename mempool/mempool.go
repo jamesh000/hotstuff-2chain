@@ -1,6 +1,13 @@
 package mempool
 
-import "github.com/jamesh000/hotstuff-2chain/crypto"
+import (
+	"context"
+	"log"
+
+	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"github.com/jamesh000/hotstuff-2chain/network"
+	"github.com/jamesh000/hotstuff-2chain/store"
+)
 
 type Round = uint64
 
@@ -20,3 +27,39 @@ type CleanupMessage struct {
 }
 
 func (msg CleanupMessage) consensusMempoolMessageMember() {}
+
+func SpawnMempool(
+	name crypto.PublicKey,
+	host *network.RoutedHost,
+	committee Committee,
+	parameters Parameters,
+	store store.Store,
+	fromConsensus <-chan ConsensusMessage,
+	toConsensus chan<- crypto.Digest,
+) {
+	go func() {
+		ps, err := network.NewPubsub(context.Background(), host, "mempool")
+		if err != nil {
+			panic(err)
+		}
+
+		for {
+			msg, err := ps.Next(context.Background())
+			if err != nil {
+				panic(err)
+			}
+
+			log.Printf("Got message \"%v\" from client\n", msg)
+
+			msgDigest := crypto.NewDigest(msg)
+
+			store.Write(msgDigest[:], msgDigest[:])
+
+			toConsensus <- msgDigest
+
+			for _ = range fromConsensus {
+				// discard
+			}
+		}
+	}()
+}
