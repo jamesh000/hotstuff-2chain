@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 )
@@ -22,7 +23,7 @@ func NewAggregator(committee Committee) aggregator {
 	}
 }
 
-func (a aggregator) addVote(v vote) (*QC, error) {
+func (a aggregator) AddVote(v vote) (*QC, error) {
 	roundMap, ok := a.voteAggregators[v.round]
 	if !ok {
 		roundMap = make(map[crypto.Digest]*qcMaker)
@@ -39,7 +40,7 @@ func (a aggregator) addVote(v vote) (*QC, error) {
 	return qcMaker.append(v, a.committee)
 }
 
-func (a aggregator) addTimeout(t timeout) (*TC, error) {
+func (a aggregator) AddTimeout(t timeout) (*TC, error) {
 	tcMaker, ok := a.timeoutAggregators[t.round]
 	if !ok {
 		tcMaker = NewTcMaker()
@@ -90,6 +91,7 @@ func (maker *qcMaker) append(v vote, committee Committee) (*QC, error) {
 	maker.aggregateSig.Add(v.signature)
 
 	if maker.weight >= committee.QuorumThreshold() {
+		log.Printf("Making a new QC with vote %v\n, voters %v", v, maker.voters)
 		maker.weight = 0
 		return &QC{
 				Hash:      v.hash,

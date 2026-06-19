@@ -63,6 +63,11 @@ func main() {
 				Usage:  "Run a test client",
 				Action: testClient,
 			},
+			{
+				Name:   "testcrypto",
+				Usage:  "Test the cryptography module",
+				Action: testCrypto,
+			},
 		},
 	}
 

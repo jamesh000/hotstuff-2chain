@@ -160,7 +160,7 @@ func (v vote) Digest() crypto.Digest {
 }
 
 func (v vote) String() string {
-	return fmt.Sprintf("Vote(author: %v, round: %v, block: %", v.author, v.round, v.hash)
+	return fmt.Sprintf("Vote(author: %v, round: %v, block: %v", v.author, v.round, v.hash)
 }
 
 type QC struct {
@@ -208,7 +208,7 @@ func (qc QC) Verify(committee Committee) error {
 		return fmt.Errorf("%v does not have a quorum", qc)
 	}
 
-	if !qc.Signature.FastAggregateVerify(qc.Hash, qc.Voters) {
+	if !(qc.Signature.FastAggregateVerify(qc.Digest(), qc.Voters)) {
 		return fmt.Errorf("%v failed signature verification", qc)
 	}
 

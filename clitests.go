@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"time"
@@ -242,4 +243,39 @@ func fullTest(ctx context.Context, cmd *cli.Command) error {
 
 	for {
 	}
+}
+
+func testCrypto(ctx context.Context, cmd *cli.Command) error {
+	sk, pk := crypto.GenerateKeypair()
+	skB64 := base64.StdEncoding.EncodeToString(sk[:])
+	fmt.Printf("sk: %v, pk: %v\n", skB64, pk)
+
+	sk2, pk2 := crypto.GenerateKeypair()
+	skB642 := base64.StdEncoding.EncodeToString(sk2[:])
+	fmt.Printf("sk2: %v, pk2: %v\n", skB642, pk2)
+
+	signatureService := crypto.NewSignatureService(sk)
+	//signatureService2 := crypto.NewSignatureService(sk2)
+
+	msg := []byte("Hello, world!")
+	d := crypto.NewDigest(msg)
+
+	testBlock := consensus.NewBlock(consensus.QC{}, nil, pk, 1, []crypto.Digest{d}, signatureService)
+
+	fmt.Printf("Block is : %v\n", testBlock)
+
+	var as crypto.AggregateSignature
+
+	as.Add(signatureService.RequestSignature(d))
+	//as.Add(signatureService2.RequestSignature(d))
+
+	finalSig := as.ToSignature()
+
+	if finalSig.FastAggregateVerify(d, []crypto.PublicKey{pk}) {
+		fmt.Println("Verified the block!")
+	} else {
+		fmt.Println("Failed to verify the block.")
+	}
+
+	return nil
 }

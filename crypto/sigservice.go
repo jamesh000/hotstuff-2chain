@@ -1,5 +1,7 @@
 package crypto
 
+import "log"
+
 type signatureRequest struct {
 	msg      Digest
 	response chan Signature
@@ -15,6 +17,7 @@ func NewSignatureService(sk SecretKey) SignatureService {
 
 	go func() {
 		for req := range ss.reqChannel {
+			log.Printf("Signing the message: %v\n", req.msg)
 			sig := Sign(req.msg, sk)
 			req.response <- sig
 			close(req.response)

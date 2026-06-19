@@ -172,7 +172,7 @@ func (c *Core) handleVote(vote *vote) error {
 		return err
 	}
 
-	qc, err := c.aggregator.addVote(*vote)
+	qc, err := c.aggregator.AddVote(*vote)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (c *Core) handleTimeout(timeout *timeout) error {
 
 	c.processQC(&timeout.highQC)
 
-	tc, err := c.aggregator.addTimeout(*timeout)
+	tc, err := c.aggregator.AddTimeout(*timeout)
 	if err != nil {
 		return err
 	}
@@ -254,6 +254,11 @@ func (c *Core) cleanupProposer(b0 *Block, b1 *Block, block *Block) {
 }
 
 func (c *Core) processQC(qc *QC) {
+	// debugging
+	if err := qc.Verify(c.committee); err != nil {
+		log.Panicf("New QC is bad with error: %v\n", err)
+	}
+
 	c.advanceRound(qc.Round)
 	c.updateHighQc(qc)
 }
@@ -287,6 +292,10 @@ func (c *Core) processBlock(block *Block) error {
 
 	if vote := c.make_vote(block); vote != nil {
 		nextLeader := c.leaderElector.getLeader(c.round + 1)
+
+		// debugging
+		log.Printf("Voting %v on block %v\n", vote, block)
+
 		if nextLeader == c.name {
 			c.handleVote(vote)
 		} else {

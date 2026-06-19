@@ -29,6 +29,17 @@ func (rh RoutedHost) String() string {
 	return rh.node.ID().String()
 }
 
+func (rh RoutedHost) Addrs() []string {
+	multiaddrs := rh.node.Addrs()
+	addrs := make([]string, 0, len(multiaddrs))
+
+	for _, a := range multiaddrs {
+		addrs = append(addrs, a.String())
+	}
+
+	return addrs
+}
+
 func (rh RoutedHost) PrintAddrs() {
 	for _, addr := range rh.node.Addrs() {
 		fmt.Printf("%s/p2p/%s\n", addr, rh.node.ID())
