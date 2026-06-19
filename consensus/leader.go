@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"bytes"
+	"log"
 	"slices"
 
 	"github.com/jamesh000/hotstuff-2chain/crypto"
@@ -30,6 +31,9 @@ func (rle rrLeaderElector) getLeader(round Round) crypto.PublicKey {
 	slices.SortStableFunc(keys, func(a, b crypto.PublicKey) int {
 		return bytes.Compare(a[:], b[:])
 	})
+	leader := keys[int(round)%rle.committee.Size()]
 
-	return keys[int(round)%rle.committee.Size()]
+	log.Printf("Leader is %v\n", leader)
+
+	return leader
 }

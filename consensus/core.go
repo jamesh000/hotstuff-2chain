@@ -179,6 +179,7 @@ func (c *Core) handleVote(vote *vote) error {
 
 	if qc != nil {
 		// process the QC
+		log.Println(182)
 		c.processQC(qc)
 
 		// Make new block if we are the next leader
@@ -198,6 +199,7 @@ func (c *Core) handleTimeout(timeout *timeout) error {
 		return err
 	}
 
+	log.Println(202)
 	c.processQC(&timeout.highQC)
 
 	tc, err := c.aggregator.AddTimeout(*timeout)
@@ -237,6 +239,7 @@ func (c *Core) advanceRound(round Round) {
 }
 
 func (c *Core) generateProposal(tc *TC) {
+	log.Printf("This proposal uses the genesis QC? %v\n", c.highQC.IsGenesisQC())
 	c.txProposer <- proposerMakeMessage{
 		round: c.round,
 		qc:    c.highQC,
@@ -254,11 +257,6 @@ func (c *Core) cleanupProposer(b0 *Block, b1 *Block, block *Block) {
 }
 
 func (c *Core) processQC(qc *QC) {
-	// debugging
-	if err := qc.Verify(c.committee); err != nil {
-		log.Panicf("New QC is bad with error: %v\n", err)
-	}
-
 	c.advanceRound(qc.Round)
 	c.updateHighQc(qc)
 }
@@ -317,6 +315,8 @@ func (c *Core) processBlock(block *Block) error {
 func (c *Core) handleProposal(block *Block) error {
 	digest := block.Digest()
 
+	log.Printf("Got block = %v\n", *block)
+
 	if block.Author != c.leaderElector.getLeader(block.Round) {
 		return fmt.Errorf("Wrong leader %v for block %v in round %v", block.Author, digest, block.Round)
 	}
@@ -325,6 +325,7 @@ func (c *Core) handleProposal(block *Block) error {
 		return err
 	}
 
+	log.Println(330)
 	c.processQC(&block.Qc)
 
 	if block.Tc != nil {
@@ -359,6 +360,7 @@ func (c *Core) handleTC(tc TC) error {
 func (c *Core) run() {
 	c.timer.Reset()
 	if c.name == c.leaderElector.getLeader(c.round) {
+		log.Println("I'm first, doing it!!!")
 		c.generateProposal(nil)
 	}
 

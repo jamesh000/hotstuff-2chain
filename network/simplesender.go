@@ -50,7 +50,7 @@ func (sender SimpleSender) Broadcast(pids []peer.ID, data []byte) {
 	}
 }
 
-func (sender SimpleSender) LuckyBroadCast(pids []peer.ID, data []byte, nodes uint) {
+func (sender SimpleSender) LuckyBroadcast(pids []peer.ID, data []byte, nodes uint) {
 	shuffledPids := make([]peer.ID, len(pids))
 	copy(shuffledPids, pids)
 	rand.Shuffle(len(shuffledPids), func(i, j int) {

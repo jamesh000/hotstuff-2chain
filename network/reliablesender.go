@@ -143,6 +143,7 @@ func (c reliableConnection) keepAlive(stream msgio.ReadWriteCloser) error {
 			data, err := stream.ReadMsg()
 			if err != nil {
 				close(readerCh)
+				return
 			}
 			readerCh <- data
 		}

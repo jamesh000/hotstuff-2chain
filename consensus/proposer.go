@@ -78,7 +78,6 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 
 	names, addresses := p.committee.BroadcastAddresses(p.name)
 
-	log.Printf("is the genesis: %v\n", block.Qc.IsGenesisQC())
 	message, err := (proposeMessage{block}).SerializeConsensusMessage()
 	if err != nil {
 		panic(err)
@@ -104,10 +103,12 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 	totalStake := p.committee.Stake(p.name)
 	for stake := range stakeCh {
 		totalStake += stake
+		log.Printf("Got ack from stake %v\n", stake)
 		if totalStake > p.committee.QuorumThreshold() {
 			break
 		}
 	}
+	log.Printf("Got all acks, totalStake = %v\n", totalStake)
 }
 
 func (p Proposer) run() {
