@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 
 	pb "github.com/jamesh000/hotstuff-2chain/consensuspb"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
@@ -326,8 +325,6 @@ func (tc TC) Verify(committee Committee) error {
 
 	if !tc.Signature.AggregateVerify(digests, authorities) {
 		return fmt.Errorf("%v failed signature verification", tc)
-	} else {
-		log.Printf("TC is GOOOD!!!!\n")
 	}
 
 	return nil

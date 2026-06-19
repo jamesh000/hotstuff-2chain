@@ -56,10 +56,12 @@ func SpawnMempool(
 			store.Write(msgDigest[:], msgDigest[:])
 
 			toConsensus <- msgDigest
+		}
+	}()
 
-			for _ = range fromConsensus {
-				// discard
-			}
+	go func() {
+		for {
+			<-fromConsensus
 		}
 	}()
 }

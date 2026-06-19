@@ -66,7 +66,7 @@ func stakeWaiter(waitFor <-chan []byte, deliver Stake, deliverTo chan<- Stake) {
 }
 
 func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
-	payload := make([]crypto.Digest, len(p.buffer))
+	payload := make([]crypto.Digest, 0, len(p.buffer))
 	for d, _ := range p.buffer {
 		payload = append(payload, d)
 	}
@@ -81,11 +81,6 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 	message, err := (proposeMessage{block}).SerializeConsensusMessage()
 	if err != nil {
 		panic(err)
-	}
-	msgb, err := DeserializeConsensusMessage(message)
-	switch m := msgb.(type) {
-	case *proposeMessage:
-		log.Printf("is the genesis: %v\n", m.block.Qc.IsGenesisQC())
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -103,8 +98,8 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 	totalStake := p.committee.Stake(p.name)
 	for stake := range stakeCh {
 		totalStake += stake
-		log.Printf("Got ack from stake %v\n", stake)
-		if totalStake > p.committee.QuorumThreshold() {
+		log.Printf("Got ack, totalstake is %v, threshold is %v\n", totalStake, p.committee.QuorumThreshold())
+		if totalStake >= p.committee.QuorumThreshold() {
 			break
 		}
 	}

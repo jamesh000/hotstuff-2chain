@@ -164,6 +164,8 @@ func (c *Core) localTimeoutRound() error {
 }
 
 func (c *Core) handleVote(vote *vote) error {
+	log.Printf("Got vote = %v\n", vote)
+
 	if vote.round < c.round {
 		return nil
 	}
@@ -179,11 +181,11 @@ func (c *Core) handleVote(vote *vote) error {
 
 	if qc != nil {
 		// process the QC
-		log.Println(182)
 		c.processQC(qc)
 
 		// Make new block if we are the next leader
 		if c.name == c.leaderElector.getLeader(c.round) {
+			log.Printf("Made %v\n", qc)
 			c.generateProposal(nil)
 		}
 	}
@@ -191,6 +193,8 @@ func (c *Core) handleVote(vote *vote) error {
 }
 
 func (c *Core) handleTimeout(timeout *timeout) error {
+	log.Printf("Got %v\n", *timeout)
+
 	if timeout.round < c.round {
 		return nil
 	}
@@ -199,7 +203,6 @@ func (c *Core) handleTimeout(timeout *timeout) error {
 		return err
 	}
 
-	log.Println(202)
 	c.processQC(&timeout.highQC)
 
 	tc, err := c.aggregator.AddTimeout(*timeout)
@@ -218,6 +221,7 @@ func (c *Core) handleTimeout(timeout *timeout) error {
 		c.network.Broadcast(addresses, message)
 
 		if c.name == c.leaderElector.getLeader(c.round) {
+			log.Printf("Made proposal with %v\n", tc)
 			c.generateProposal(tc)
 		}
 	}
@@ -239,7 +243,6 @@ func (c *Core) advanceRound(round Round) {
 }
 
 func (c *Core) generateProposal(tc *TC) {
-	log.Printf("This proposal uses the genesis QC? %v\n", c.highQC.IsGenesisQC())
 	c.txProposer <- proposerMakeMessage{
 		round: c.round,
 		qc:    c.highQC,
@@ -276,17 +279,24 @@ func (c *Core) processBlock(block *Block) error {
 	}
 
 	// Only store the block if all ancestors have been processed
-	c.storeBlock(block)
+	if err := c.storeBlock(block); err != nil {
+		log.Printf("Storing of block failed: %v\n", err)
+	}
 
 	c.cleanupProposer(b0, b1, block)
+
+	log.Println(288)
 
 	// Check if we can commit the head of the 2-chain
 	if b0.Round+1 == b1.Round {
 		c.mempoolDriver.cleanup(b0.Round)
+		log.Println(293)
 		if err := c.commit(*b0); err != nil {
 			return err
 		}
 	}
+
+	log.Println(298)
 
 	if vote := c.make_vote(block); vote != nil {
 		nextLeader := c.leaderElector.getLeader(c.round + 1)
@@ -307,8 +317,11 @@ func (c *Core) processBlock(block *Block) error {
 				return err
 			}
 			c.network.Send(address, message)
+			log.Println("Allegedly sent vote")
 		}
 	}
+
+	log.Println("Finished somehow??")
 	return nil
 }
 
@@ -325,7 +338,6 @@ func (c *Core) handleProposal(block *Block) error {
 		return err
 	}
 
-	log.Println(330)
 	c.processQC(&block.Qc)
 
 	if block.Tc != nil {
@@ -351,6 +363,7 @@ func (c *Core) handleTC(tc TC) error {
 	c.advanceRound(tc.Round)
 
 	if c.name == c.leaderElector.getLeader(c.round) {
+		log.Printf("2Made proposal with %v\n", tc)
 		c.generateProposal(&tc)
 	}
 
@@ -360,18 +373,22 @@ func (c *Core) handleTC(tc TC) error {
 func (c *Core) run() {
 	c.timer.Reset()
 	if c.name == c.leaderElector.getLeader(c.round) {
-		log.Println("I'm first, doing it!!!")
+		log.Println("I'm first, making block")
 		c.generateProposal(nil)
 	}
 
 	for {
 		var result error
+
+		log.Printf("Waiting again\n")
+
 		select {
 		case msg := <-c.rxMessage:
 			switch m := msg.(type) {
 			case *proposeMessage:
 				result = c.handleProposal(&m.block)
 			case *voteMessage:
+				log.Println("GOT REMOTE VOTE!!!!!!!!)()(*#)*")
 				result = c.handleVote(&m.vote)
 			case *timeoutMessage:
 				result = c.handleTimeout(&m.timeout)

@@ -15,7 +15,7 @@ type Parameters struct {
 
 func DefaultParameters() Parameters {
 	return Parameters{
-		TimeoutDelay:   10000,
+		TimeoutDelay:   100000,
 		SyncRetryDelay: 10000,
 	}
 }
@@ -68,7 +68,7 @@ func (c Committee) QuorumThreshold() Stake {
 	for _, a := range c.Authorities {
 		totalStake += a.Stake
 	}
-	return totalStake
+	return 2*totalStake/3 + 1
 }
 
 func (c Committee) Address(name crypto.PublicKey) (peer.ID, bool) {
