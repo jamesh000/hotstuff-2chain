@@ -69,6 +69,7 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 	payload := make([]crypto.Digest, 0, len(p.buffer))
 	for d, _ := range p.buffer {
 		payload = append(payload, d)
+		delete(p.buffer, d)
 	}
 
 	block := NewBlock(qc, tc, p.name, round, payload, p.signatureService)

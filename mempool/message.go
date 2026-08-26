@@ -3,9 +3,9 @@ package mempool
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	pb "github.com/jamesh000/hotstuff-2chain/mempoolpb"
+	"google.golang.org/protobuf/proto"
 )
 
 type mempoolMessage interface {

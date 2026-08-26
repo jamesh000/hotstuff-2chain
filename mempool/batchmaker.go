@@ -60,6 +60,8 @@ func (bm *batchMaker) run() {
 	for {
 		select {
 		case tx := <-bm.rxTransaction:
+			log.Printf("Received transaction: %v\n", string(tx))
+
 			bm.currentBatchSize += uint64(len(tx))
 			bm.currentBatch = append(bm.currentBatch, tx)
 			if bm.currentBatchSize >= bm.batchSize {
@@ -116,7 +118,11 @@ func deserializeBatch(data []byte) (batch, error) {
 }
 
 func (bm *batchMaker) seal() {
+	log.Println("Sealing batch...")
+
 	sealed := serializeBatch(bm.currentBatch)
+	bm.currentBatch = make(batch, 0, 2*bm.batchSize)
+
 	message := batchMessage{sealed}
 	serialized, err := message.serializeMempoolMessage()
 	if err != nil {

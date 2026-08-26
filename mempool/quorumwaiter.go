@@ -67,7 +67,12 @@ func (qw *quorumWaiter) run() {
 				}()
 			}
 
-			totalStake := qw.stake
+			totalStake := Stake(0)
+
+			// this makes it so progress is possible when the whole quorum is just this node
+			go func() { waitForQuorum <- qw.stake }()
+
+			// Get a quorum to acknowledge the batch before processing it further
 			for s := range waitForQuorum {
 				totalStake += s
 				if totalStake >= qw.committee.QuorumThreshold() {
