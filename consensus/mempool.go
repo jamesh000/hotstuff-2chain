@@ -40,7 +40,7 @@ func (driver MempoolDriver) verify(block Block) bool {
 		return true
 	}
 
-	message := mempool.SynchronizeMessage{Missing: missing, Author: block.Author}
+	message := mempool.SynchronizeMessage{Missing: missing, Target: block.Author}
 	driver.txMempool <- message
 
 	driver.txPayloadWaiter <- PayloadWaiterMessage{msgType: waitCommand, missing: missing, block: &block}

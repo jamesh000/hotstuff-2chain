@@ -33,7 +33,7 @@ type AuthorityInfo struct {
 
 type Committee struct {
 	Authorities map[crypto.PublicKey]Authority `json:"authorities"`
-	Epoch       EpochNumber                    `json:"epoch"`b
+	Epoch       EpochNumber                    `json:"epoch"`
 }
 
 func NewCommittee(info []AuthorityInfo, epoch EpochNumber) Committee {

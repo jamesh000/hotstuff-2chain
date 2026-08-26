@@ -137,10 +137,8 @@ func testClient(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	ps, err := network.NewPubsub(context.Background(), host, "mempool")
-	if err != nil {
-		return err
-	}
+
+	sender := network.NewSimpleSender(*host, "client")
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -156,7 +154,8 @@ func testClient(ctx context.Context, cmd *cli.Command) error {
 
 		fmt.Printf("sending text: %v\n", line)
 
-		ps.Publish(context.Background(), []byte(line))
+		_, addresses := committee.Mempool.BroadcastAddresses(crypto.PublicKey{})
+		sender.LuckyBroadcast(addresses, []byte(line), 1)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -170,6 +169,7 @@ func generateCommittee(ctx context.Context, cmd *cli.Command) error {
 	bsNode := cmd.Args().Get(0)
 
 	authorityInfos := make([]consensus.AuthorityInfo, 0, secretCount)
+	memAuthorityInfos := make([]mempool.AuthorityInfo, 0, secretCount)
 
 	for i := range secretCount {
 		secretFileName := fmt.Sprintf("secret_%v.sc", i)
@@ -192,11 +192,18 @@ func generateCommittee(ctx context.Context, cmd *cli.Command) error {
 			Address: address,
 		}
 
+		ithMemAuthority := mempool.AuthorityInfo{
+			Author:  name,
+			Stake:   1,
+			Address: address,
+		}
+
 		authorityInfos = append(authorityInfos, ithAuthority)
+		memAuthorityInfos = append(memAuthorityInfos, ithMemAuthority)
 	}
 
 	consensusCommittee := consensus.NewCommittee(authorityInfos, 1)
-	mempoolCommitee := mempool.Committee{Empty: "nothing for now"}
+	mempoolCommitee := mempool.NewCommittee(memAuthorityInfos, 1)
 	bootstrapNodes := []string{bsNode}
 
 	newCommittee := node.Committee{

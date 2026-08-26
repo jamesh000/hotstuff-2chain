@@ -9,34 +9,32 @@ type EpochNumber = uint64
 type Stake = uint32
 
 type Parameters struct {
-	gcDepth        uint64 `json:"gcdepth"`
-	syncRetryDelay uint64 `json:"syncretrydelay"`
-	syncRetryNodes uint   `json:"syncretrynodes"`
-	batchSize      uint   `json:"batchsize"`
-	maxBatchDelay  uint   `json:"maxbatchdelay"`
+	GcDepth        uint64 `json:"gcdepth"`
+	SyncRetryDelay uint64 `json:"syncretrydelay"`
+	SyncRetryNodes uint   `json:"syncretrynodes"`
+	BatchSize      uint   `json:"batchsize"`
+	MaxBatchDelay  uint   `json:"maxbatchdelay"`
 }
 
 func DefaultParameters() Parameters {
 	return Parameters{
-		gcDepth:        50,
-		syncRetryDelay: 5_000,
-		syncRetryNodes: 3,
-		batchSize:      500_000,
-		maxBatchDelay:  100,
+		GcDepth:        50,
+		SyncRetryDelay: 5_000,
+		SyncRetryNodes: 3,
+		BatchSize:      500_000,
+		MaxBatchDelay:  100,
 	}
 }
 
 type Authority struct {
-	Stake               Stake   `json:"stake"`
-	TransactionsAddress peer.ID `json:"txaddress"`
-	MempoolAddress      peer.ID `json:"mpaddress"`
+	Stake   Stake   `json:"stake"`
+	Address peer.ID `json:"mpaddress"`
 }
 
-type authorityInfo struct {
-	Author              crypto.PublicKey
-	Stake               Stake
-	TransactionsAddress peer.ID
-	MempoolAddress      peer.ID
+type AuthorityInfo struct {
+	Author  crypto.PublicKey
+	Stake   Stake
+	Address peer.ID
 }
 
 type Committee struct {
@@ -44,13 +42,12 @@ type Committee struct {
 	Epoch       EpochNumber                    `json:"epoch"`
 }
 
-func NewCommittee(info []authorityInfo, epoch EpochNumber) Committee {
+func NewCommittee(info []AuthorityInfo, epoch EpochNumber) Committee {
 	authorities := make(map[crypto.PublicKey]Authority)
 	for _, authInfo := range info {
 		authorities[authInfo.Author] = Authority{
-			Stake:               authInfo.Stake,
-			TransactionsAddress: authInfo.TransactionsAddress,
-			MempoolAddress:      authInfo.MempoolAddress,
+			Stake:   authInfo.Stake,
+			Address: authInfo.Address,
 		}
 	}
 
@@ -75,14 +72,9 @@ func (c Committee) QuorumThreshold() Stake {
 	return 2*totalStake/3 + 1
 }
 
-func (c Committee) TransactionsAddress(name crypto.PublicKey) (peer.ID, bool) {
-	authority, ok := c.Authorities[name]
-	return authority.TransactionsAddress, ok
-}
-
 func (c Committee) MempoolAddress(name crypto.PublicKey) (peer.ID, bool) {
 	authority, ok := c.Authorities[name]
-	return authority.MempoolAddress, ok
+	return authority.Address, ok
 }
 
 // Specifically gets mempool addresses
@@ -93,7 +85,7 @@ func (c Committee) BroadcastAddresses(myself crypto.PublicKey) ([]crypto.PublicK
 	for pk, a := range c.Authorities {
 		if pk != myself {
 			names = append(names, pk)
-			addresses = append(addresses, a.MempoolAddress)
+			addresses = append(addresses, a.Address)
 		}
 	}
 

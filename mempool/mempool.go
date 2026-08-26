@@ -22,18 +22,18 @@ type ConsensusMessage interface {
 	consensusMempoolMessageMember()
 }
 
-type consensusSynchronizeMessage struct {
-	missing []crypto.Digest
-	target  crypto.PublicKey
+type SynchronizeMessage struct {
+	Missing []crypto.Digest
+	Target  crypto.PublicKey
 }
 
-func (msg consensusSynchronizeMessage) consensusMempoolMessageMember() {}
+func (msg SynchronizeMessage) consensusMempoolMessageMember() {}
 
-type consensusCleanupMessage struct {
-	round Round
+type CleanupMessage struct {
+	Round Round
 }
 
-func (msg consensusCleanupMessage) consensusMempoolMessageMember() {}
+func (msg CleanupMessage) consensusMempoolMessageMember() {}
 
 type Mempool struct {
 	name        crypto.PublicKey
@@ -77,9 +77,9 @@ func (mp *Mempool) handleConsensusMessages(rxConsensus <-chan ConsensusMessage, 
 		mp.name,
 		mp.committee,
 		mp.store,
-		mp.parameters.gcDepth,
-		mp.parameters.syncRetryDelay,
-		mp.parameters.syncRetryNodes,
+		mp.parameters.GcDepth,
+		mp.parameters.SyncRetryDelay,
+		mp.parameters.SyncRetryNodes,
 		rxConsensus,
 		host,
 	)
@@ -94,8 +94,8 @@ func (mp *Mempool) handleClientsTransactions(host *network.RoutedHost) {
 
 	names, addresses := mp.committee.BroadcastAddresses(mp.name)
 	spawnBatchMaker(
-		uint64(mp.parameters.batchSize),
-		uint64(mp.parameters.maxBatchDelay),
+		uint64(mp.parameters.BatchSize),
+		uint64(mp.parameters.MaxBatchDelay),
 		batchMakerCh,
 		quorumWaiterCh,
 		names,

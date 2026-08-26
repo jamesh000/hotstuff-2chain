@@ -66,11 +66,11 @@ func (s *synchronizer) run() {
 		select {
 		case consensusMessage := <-s.rxMessage:
 			switch msg := consensusMessage.(type) {
-			case consensusSynchronizeMessage:
+			case SynchronizeMessage:
 				now := time.Now().UnixMilli()
 
-				missing := make([]crypto.Digest, 0, len(msg.missing))
-				for _, d := range msg.missing {
+				missing := make([]crypto.Digest, 0, len(msg.Missing))
+				for _, d := range msg.Missing {
 					if _, ok := s.pending[d]; ok {
 						continue
 					}
@@ -99,9 +99,9 @@ func (s *synchronizer) run() {
 					}
 				}
 
-				address, ok := s.committee.MempoolAddress(msg.target)
+				address, ok := s.committee.MempoolAddress(msg.Target)
 				if !ok {
-					log.Printf("Consensus asked us to sync with an unknown node: %v\n", msg.target)
+					log.Printf("Consensus asked us to sync with an unknown node: %v\n", msg.Target)
 					continue
 				}
 
@@ -116,8 +116,8 @@ func (s *synchronizer) run() {
 				}
 				s.network.Send(address, serialized)
 
-			case consensusCleanupMessage:
-				s.round = msg.round
+			case CleanupMessage:
+				s.round = msg.Round
 
 				if s.round < s.gcDepth {
 					continue
