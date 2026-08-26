@@ -1,0 +1,20 @@
+syntax = "proto3";
+package mempool;
+
+option go_package = "./mempoolpb";
+
+message MempoolMessage {
+        message Batch {
+                bytes batch = 1;
+        }
+
+        message Request {
+                repeated bytes missing = 1;
+                bytes origin = 2;
+        }
+
+        oneof msg {
+              Batch BatchMessage = 1;
+              Request ReqMessage = 2;
+        }
+}

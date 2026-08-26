@@ -9,11 +9,28 @@ import (
 	"github.com/jamesh000/hotstuff-2chain/store"
 )
 
+const channelCapacity = 1_000
+
+const mempoolProtocol string = "mempool"
+
 type Round = uint64
 
 type ConsensusMessage interface {
 	consensusMempoolMessageMember()
 }
+
+type consensusSynchronizeMessage struct {
+	missing []crypto.Digest
+	target  crypto.PublicKey
+}
+
+func (msg consensusSynchronizeMessage) consensusMempoolMessageMember() {}
+
+type consensusCleanupMessage struct {
+	round Round
+}
+
+func (msg consensusCleanupMessage) consensusMempoolMessageMember() {}
 
 type SynchronizeMessage struct {
 	Missing []crypto.Digest

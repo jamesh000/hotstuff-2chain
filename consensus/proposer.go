@@ -110,6 +110,7 @@ func (p Proposer) run() {
 	for {
 		select {
 		case digest := <-p.rxMempool:
+			log.Printf("Got digest %v from mempool\n", digest)
 			p.buffer[digest] = struct{}{}
 		case message := <-p.rxMessage:
 			switch msg := message.(type) {
