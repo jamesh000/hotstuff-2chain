@@ -81,7 +81,7 @@ func storeTest(ctx context.Context, cmd *cli.Command) error {
 }
 
 // generate a bunch of secrets
-const secretCount = 1
+const secretCount = 4
 
 func genSecrets(ctx context.Context, cmd *cli.Command) error {
 

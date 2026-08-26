@@ -86,7 +86,7 @@ func (mp *Mempool) handleConsensusMessages(rxConsensus <-chan ConsensusMessage, 
 }
 
 func (mp *Mempool) handleClientsTransactions(host *network.RoutedHost) {
-	batchMakerCh := make(chan transaction, channelCapacity)
+	batchMakerCh := make(chan Transaction, channelCapacity)
 	quorumWaiterCh := make(chan quorumWaiterMessage, channelCapacity)
 	processorCh := make(chan sealedBatch, channelCapacity)
 
@@ -151,7 +151,7 @@ func (mp *Mempool) handleMempoolMessages(host *network.RoutedHost) {
 }
 
 type txReceiverHandler struct {
-	txBatchMaker chan<- transaction
+	txBatchMaker chan<- Transaction
 }
 
 func (h txReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte) error {
@@ -174,9 +174,9 @@ func (h mempoolReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte) e
 	}
 
 	switch m := deserialized.(type) {
-	case batchMessage:
+	case *batchMessage:
 		h.txProcessor <- m.batch
-	case requestMessage:
+	case *requestMessage:
 		h.txHelper <- helperRequest{m.missing, m.origin}
 	default:
 		return fmt.Errorf("Invalid mempool message type")

@@ -15,17 +15,17 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-type transaction = []byte
-type batch = []transaction
+type Transaction = []byte
+type Batch = []Transaction
 
 type batchMaker struct {
 	batchSize        uint64
 	maxBatchDelay    uint64
-	rxTransaction    <-chan transaction
+	rxTransaction    <-chan Transaction
 	txMessage        chan<- quorumWaiterMessage
 	names            []crypto.PublicKey
 	addresses        []peer.ID
-	currentBatch     batch
+	currentBatch     Batch
 	currentBatchSize uint64
 	network          network.ReliableSender
 }
@@ -33,7 +33,7 @@ type batchMaker struct {
 func spawnBatchMaker(
 	batchSize uint64,
 	maxBatchDelay uint64,
-	rxTransaction <-chan transaction,
+	rxTransaction <-chan Transaction,
 	txMessage chan<- quorumWaiterMessage,
 	names []crypto.PublicKey,
 	addresses []peer.ID,
@@ -46,7 +46,7 @@ func spawnBatchMaker(
 		txMessage:        txMessage,
 		names:            names,
 		addresses:        addresses,
-		currentBatch:     make(batch, 0, 2*batchSize),
+		currentBatch:     make(Batch, 0, 2*batchSize),
 		currentBatchSize: 0,
 		network:          network.NewReliableSender(host, protocol.ID(mempoolProtocol)),
 	}
@@ -77,7 +77,7 @@ func (bm *batchMaker) run() {
 	}
 }
 
-func serializeBatch(batch batch) []byte {
+func SerializeBatch(batch Batch) []byte {
 	buf := bytes.Buffer{}
 
 	for _, tx := range batch {
@@ -90,10 +90,10 @@ func serializeBatch(batch batch) []byte {
 	return buf.Bytes()
 }
 
-func deserializeBatch(data []byte) (batch, error) {
+func DeserializeBatch(data []byte) (Batch, error) {
 	r := bytes.NewReader(data)
 
-	var batch batch
+	var batch Batch
 
 	for r.Len() > 0 {
 		var length uint64
@@ -106,7 +106,7 @@ func deserializeBatch(data []byte) (batch, error) {
 			return nil, fmt.Errorf("Invalid transaction length %d, only %d bytes left in batch", length, r.Len())
 		}
 
-		tx := make(transaction, length)
+		tx := make(Transaction, length)
 		if _, err := io.ReadFull(r, tx); err != nil {
 			return nil, err
 		}
@@ -120,8 +120,8 @@ func deserializeBatch(data []byte) (batch, error) {
 func (bm *batchMaker) seal() {
 	log.Println("Sealing batch...")
 
-	sealed := serializeBatch(bm.currentBatch)
-	bm.currentBatch = make(batch, 0, 2*bm.batchSize)
+	sealed := SerializeBatch(bm.currentBatch)
+	bm.currentBatch = make(Batch, 0, 2*bm.batchSize)
 
 	message := batchMessage{sealed}
 	serialized, err := message.serializeMempoolMessage()

@@ -3,6 +3,7 @@ package consensus
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/network"
@@ -72,6 +73,11 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 		delete(p.buffer, d)
 	}
 
+	// for debugging, slows the creation of blocks when there is no payload
+	if len(payload) == 0 {
+		time.Sleep(3 * time.Second)
+	}
+
 	block := NewBlock(qc, tc, p.name, round, payload, p.signatureService)
 
 	log.Printf("Created %v\n", block)
@@ -96,7 +102,11 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 		go stakeWaiter(response, p.committee.Stake(names[i]), stakeCh)
 	}
 
-	totalStake := p.committee.Stake(p.name)
+	totalStake := Stake(0)
+
+	// Allows progress when only one node in committee
+	go func() { stakeCh <- p.committee.Stake(p.name) }()
+
 	for stake := range stakeCh {
 		totalStake += stake
 		log.Printf("Got ack, totalstake is %v, threshold is %v\n", totalStake, p.committee.QuorumThreshold())

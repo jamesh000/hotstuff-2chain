@@ -1,8 +1,11 @@
 package node
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/jamesh000/hotstuff-2chain/consensus"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
@@ -15,6 +18,7 @@ const CHANNEL_CAPACITY = 1000
 
 type Node struct {
 	commit chan consensus.Block
+	store  store.Store
 }
 
 func NewNode(committeeFile string, keyFile string, storePath string, parameterFile *string) (*Node, error) {
@@ -78,11 +82,39 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 	)
 
 	log.Printf("Node %v successfully booted\n", name)
-	return &Node{commit}, nil
+	return &Node{commit, *store}, nil
 }
 
 func (n *Node) ProcessBlocks() {
+	log.Println("STARTED PROCESSING BLOCKS")
 	for block := range n.commit {
-		log.Printf("%v has been committed!\n", block)
+		w := bufio.NewWriter(os.Stdout)
+		fmt.Fprintf(w, "%v HAS BEEN COMMITTED!\n", block)
+		fmt.Fprintln(w, "It contains the following batches:")
+		for _, digest := range block.Payload {
+			fmt.Fprintf(w, "Batch %v:\n", digest)
+
+			batchBytes, err := n.store.Read(digest[:])
+			if err != nil {
+				fmt.Fprintln(w, "Failed to read batch from store")
+				continue
+			}
+
+			if batchBytes == nil {
+				fmt.Fprintln(w, "We don't have this batch in our store")
+				continue
+			}
+
+			batch, err := mempool.DeserializeBatch(*batchBytes)
+			if err != nil {
+				fmt.Fprintln(w, "Failed to deserialize batch")
+				continue
+			}
+
+			for _, tx := range batch {
+				fmt.Fprintln(w, string(tx))
+			}
+		}
+		w.Flush()
 	}
 }
