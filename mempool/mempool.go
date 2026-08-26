@@ -1,9 +1,6 @@
 package mempool
 
 import (
-	"context"
-	"log"
-
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/network"
 	"github.com/jamesh000/hotstuff-2chain/store"
@@ -32,18 +29,13 @@ type consensusCleanupMessage struct {
 
 func (msg consensusCleanupMessage) consensusMempoolMessageMember() {}
 
-type SynchronizeMessage struct {
-	Missing []crypto.Digest
-	Author  crypto.PublicKey
+type Mempool struct {
+	name        crypto.PublicKey
+	committee   Committee
+	parameters  Parameters
+	store       store.Store
+	txConsensus chan<- crypto.Digest
 }
-
-func (msg SynchronizeMessage) consensusMempoolMessageMember() {}
-
-type CleanupMessage struct {
-	Round Round
-}
-
-func (msg CleanupMessage) consensusMempoolMessageMember() {}
 
 func SpawnMempool(
 	name crypto.PublicKey,
@@ -51,34 +43,7 @@ func SpawnMempool(
 	committee Committee,
 	parameters Parameters,
 	store store.Store,
-	fromConsensus <-chan ConsensusMessage,
-	toConsensus chan<- crypto.Digest,
+	rxConsensus <-chan ConsensusMessage,
+	txConsensus chan<- crypto.Digest,
 ) {
-	go func() {
-		ps, err := network.NewPubsub(context.Background(), host, "mempool")
-		if err != nil {
-			panic(err)
-		}
-
-		for {
-			msg, err := ps.Next(context.Background())
-			if err != nil {
-				panic(err)
-			}
-
-			log.Printf("Got message \"%v\" from client\n", string(msg))
-
-			msgDigest := crypto.NewDigest(msg)
-
-			store.Write(msgDigest[:], msgDigest[:])
-
-			toConsensus <- msgDigest
-		}
-	}()
-
-	go func() {
-		for {
-			<-fromConsensus
-		}
-	}()
 }

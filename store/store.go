@@ -22,16 +22,16 @@ const (
 	closeCommand
 )
 
-type storeResult struct {
-	value *Value
-	err   error
+type StoreResult struct {
+	Value *Value
+	Err   error
 }
 
 type command struct {
 	t        commandType
 	key      Key
 	value    Value
-	response chan storeResult
+	response chan StoreResult
 }
 
 type Store struct {
@@ -44,7 +44,7 @@ func NewStore(path string) (*Store, error) {
 		return nil, err
 	}
 
-	obligations := make(map[string][]chan storeResult)
+	obligations := make(map[string][]chan StoreResult)
 
 	channel := make(chan command, CHANNEL_CAPACITY)
 
@@ -57,7 +57,7 @@ func NewStore(path string) (*Store, error) {
 					for _, s := range senders {
 						value := make(Value, len(cmd.value))
 						copy(value, cmd.value)
-						s <- storeResult{&value, nil}
+						s <- StoreResult{&value, nil}
 					}
 					delete(obligations, string(cmd.key))
 				}
@@ -68,7 +68,7 @@ func NewStore(path string) (*Store, error) {
 					if err == pebble.ErrNotFound {
 						err = ErrNotFound
 					}
-					cmd.response <- storeResult{nil, err}
+					cmd.response <- StoreResult{nil, err}
 					continue
 				}
 				defer closer.Close()
@@ -76,20 +76,20 @@ func NewStore(path string) (*Store, error) {
 				responseVal := make(Value, len(val))
 				copy(responseVal, val)
 
-				cmd.response <- storeResult{&responseVal, nil}
+				cmd.response <- StoreResult{&responseVal, nil}
 
 			case notifyReadCommand:
 				val, closer, err := db.Get(cmd.key)
 				if err == pebble.ErrNotFound {
 					if _, ok := obligations[string(cmd.key)]; !ok {
-						obligations[string(cmd.key)] = make([]chan storeResult, 0, 10)
+						obligations[string(cmd.key)] = make([]chan StoreResult, 0, 10)
 					}
 					obligations[string(cmd.key)] = append(obligations[string(cmd.key)], cmd.response)
 					continue
 				}
 
 				if err != nil {
-					cmd.response <- storeResult{nil, err}
+					cmd.response <- StoreResult{nil, err}
 					continue
 				}
 				defer closer.Close()
@@ -97,7 +97,7 @@ func NewStore(path string) (*Store, error) {
 				responseVal := make(Value, len(val))
 				copy(responseVal, val)
 
-				cmd.response <- storeResult{&responseVal, nil}
+				cmd.response <- StoreResult{&responseVal, nil}
 
 			case closeCommand:
 				db.Close()
@@ -117,21 +117,28 @@ func (s Store) Write(key Key, value Value) {
 }
 
 func (s Store) Read(key Key) (*Value, error) {
-	responseCh := make(chan storeResult, 1)
+	responseCh := make(chan StoreResult, 1)
 	s.channel <- command{readCommand, key, nil, responseCh}
 
 	response := <-responseCh
 
-	return response.value, response.err
+	return response.Value, response.Err
 }
 
 func (s Store) NotifyRead(key Key) (Value, error) {
-	responseCh := make(chan storeResult, 1)
+	responseCh := make(chan StoreResult, 1)
 	s.channel <- command{notifyReadCommand, key, nil, responseCh}
 
 	response := <-responseCh
 
-	return *response.value, response.err
+	return *response.Value, response.Err
+}
+
+func (s Store) NotifyReadChannel(key Key) <-chan StoreResult {
+	responseCh := make(chan StoreResult, 1)
+	s.channel <- command{notifyReadCommand, key, nil, responseCh}
+
+	return responseCh
 }
 
 func (s Store) Close() {
