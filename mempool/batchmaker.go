@@ -18,17 +18,13 @@ import (
 type transaction = []byte
 type batch = []transaction
 
-type mempoolAddr struct {
-	name crypto.PublicKey
-	addr peer.ID
-}
-
 type batchMaker struct {
 	batchSize        uint64
 	maxBatchDelay    uint64
 	rxTransaction    <-chan transaction
 	txMessage        chan<- quorumWaiterMessage
-	mempoolAddresses []mempoolAddr
+	names            []crypto.PublicKey
+	addresses        []peer.ID
 	currentBatch     batch
 	currentBatchSize uint64
 	network          network.ReliableSender
@@ -39,7 +35,8 @@ func spawnBatchMaker(
 	maxBatchDelay uint64,
 	rxTransaction <-chan transaction,
 	txMessage chan<- quorumWaiterMessage,
-	mempoolAddresses []mempoolAddr,
+	names []crypto.PublicKey,
+	addresses []peer.ID,
 	host network.RoutedHost,
 ) {
 	newBatchMaker := batchMaker{
@@ -47,7 +44,8 @@ func spawnBatchMaker(
 		maxBatchDelay:    maxBatchDelay,
 		rxTransaction:    rxTransaction,
 		txMessage:        txMessage,
-		mempoolAddresses: mempoolAddresses,
+		names:            names,
+		addresses:        addresses,
 		currentBatch:     make(batch, 0, 2*batchSize),
 		currentBatchSize: 0,
 		network:          network.NewReliableSender(host, protocol.ID(mempoolProtocol)),
@@ -118,8 +116,6 @@ func deserializeBatch(data []byte) (batch, error) {
 }
 
 func (bm *batchMaker) seal() {
-	size := bm.currentBatchSize
-
 	sealed := serializeBatch(bm.currentBatch)
 	message := batchMessage{sealed}
 	serialized, err := message.serializeMempoolMessage()
@@ -127,18 +123,11 @@ func (bm *batchMaker) seal() {
 		log.Fatalf("Failed to serialize a batch message")
 	}
 
-	names := make([]crypto.PublicKey, len(bm.mempoolAddresses))
-	addresses := make([]peer.ID, len(bm.mempoolAddresses))
-	for i, ma := range bm.mempoolAddresses {
-		names[i] = ma.name
-		addresses[i] = ma.addr
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-	channels := bm.network.Broadcast(ctx, addresses, serialized)
+	channels := bm.network.Broadcast(ctx, bm.addresses, serialized)
 
-	handlers := make([]handler, len(names))
-	for i, name := range names {
+	handlers := make([]handler, len(bm.names))
+	for i, name := range bm.names {
 		handlers[i] = handler{
 			name: name,
 			h:    channels[i],

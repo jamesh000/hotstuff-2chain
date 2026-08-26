@@ -39,7 +39,7 @@ func spawnSynchronizer(
 	syncRetryDelay uint64,
 	syncRetryNodes uint,
 	rxMessage <-chan ConsensusMessage,
-	host network.RoutedHost,
+	host *network.RoutedHost,
 ) {
 	newSynchronizer := synchronizer{
 		name:           name,
@@ -49,7 +49,7 @@ func spawnSynchronizer(
 		syncRetryDelay: syncRetryDelay,
 		syncRetryNodes: syncRetryNodes,
 		rxMessage:      rxMessage,
-		network:        *network.NewSimpleSender(host, protocol.ID(mempoolProtocol)),
+		network:        *network.NewSimpleSender(*host, protocol.ID(mempoolProtocol)),
 		round:          0,
 		pending:        make(map[crypto.Digest]batchInfo),
 	}
