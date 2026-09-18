@@ -44,7 +44,16 @@ func (h Helper) run() {
 		}
 
 		block, err := new(Block).Deserialize(*bytes)
+		if err != nil {
+			log.Println("Failed to deserialize our own block")
+			continue
+		}
+
 		message, err := (proposeMessage{*block}).SerializeConsensusMessage()
+		if err != nil {
+			log.Println("Failed to serialize propose message")
+			continue
+		}
 
 		h.network.Send(address, message)
 	}

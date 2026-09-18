@@ -151,8 +151,14 @@ func (s *AggregateSignature) Aggregate(sigs []Signature) {
 	s.bas.Aggregate(bsigs, true)
 }
 
-func (s *AggregateSignature) Add(sig Signature) {
-	s.bas.Add(new(blstSignature).Uncompress(sig[:]), true)
+func (s *AggregateSignature) Add(sig Signature) error {
+	decompressed := new(blstSignature).Uncompress(sig[:])
+	if decompressed == nil {
+		return fmt.Errorf("Invalid signature, could not decompress")
+	}
+
+	s.bas.Add(decompressed, true)
+	return nil
 }
 
 func (s AggregateSignature) ToSignature() Signature {

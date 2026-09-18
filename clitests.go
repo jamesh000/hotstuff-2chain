@@ -57,7 +57,7 @@ func storeTest(ctx context.Context, cmd *cli.Command) error {
 			panic(err)
 		}
 		time.Sleep(100 * time.Millisecond)
-		fmt.Printf("I got it too, %v\n", string(resultNR))
+		fmt.Printf("I got it too, %v\n", string(*resultNR))
 	}()
 
 	result, err = storage.Read([]byte("critical value"))
@@ -71,7 +71,7 @@ func storeTest(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Finally got the value, %v\n", string(resultNR))
+	fmt.Printf("Finally got the value, %v\n", string(*resultNR))
 
 	time.Sleep(1 * time.Second)
 

@@ -120,10 +120,10 @@ func (c *Core) commit(block Block) error {
 			panic(err)
 		}
 
-		toCommit.PushFront(*ancestor)
+		toCommit.PushBack(*ancestor)
 		parent = ancestor
 	}
-	toCommit.PushFront(block)
+	toCommit.PushBack(block)
 
 	c.lastCommittedRound = block.Round
 
@@ -132,7 +132,7 @@ func (c *Core) commit(block Block) error {
 			log.Printf("Committed %v\n", b)
 		}
 
-		c.txCommit <- block
+		c.txCommit <- b
 	}
 
 	return nil
@@ -251,7 +251,7 @@ func (c *Core) generateProposal(tc *TC) {
 }
 
 func (c *Core) cleanupProposer(b0 *Block, b1 *Block, block *Block) {
-	digests := make([]crypto.Digest, len(b0.Payload)+len(b1.Payload)+len(block.Payload))
+	digests := make([]crypto.Digest, 0, len(b0.Payload)+len(b1.Payload)+len(block.Payload))
 	digests = append(digests, b0.Payload...)
 	digests = append(digests, b1.Payload...)
 	digests = append(digests, block.Payload...)
@@ -270,7 +270,7 @@ func (c *Core) processBlock(block *Block) error {
 	// check that we have block ancestors
 	b0, b1, err := c.synchronizer.getAncestors(block)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if b0 == nil || b1 == nil {
@@ -285,8 +285,6 @@ func (c *Core) processBlock(block *Block) error {
 
 	c.cleanupProposer(b0, b1, block)
 
-	log.Println(288)
-
 	// Check if we can commit the head of the 2-chain
 	if b0.Round+1 == b1.Round {
 		c.mempoolDriver.cleanup(b0.Round)
@@ -295,8 +293,6 @@ func (c *Core) processBlock(block *Block) error {
 			return err
 		}
 	}
-
-	log.Println(298)
 
 	if vote := c.make_vote(block); vote != nil {
 		nextLeader := c.leaderElector.getLeader(c.round + 1)

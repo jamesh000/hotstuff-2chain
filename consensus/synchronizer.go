@@ -40,7 +40,7 @@ func NewSynchronizer(
 			select {
 			case block := <-innerChannel:
 				blockDigest := block.Digest()
-				if _, ok := pending[blockDigest]; !ok {
+				if _, ok := pending[blockDigest]; ok {
 					continue
 				}
 

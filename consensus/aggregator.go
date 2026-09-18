@@ -88,7 +88,10 @@ func (maker *qcMaker) append(v vote, committee Committee) (*QC, error) {
 	maker.voters = append(maker.voters, v.author)
 	maker.weight += committee.Stake(v.author)
 
-	maker.aggregateSig.Add(v.signature)
+	err := maker.aggregateSig.Add(v.signature)
+	if err != nil {
+		return nil, err
+	}
 
 	if maker.weight >= committee.QuorumThreshold() {
 		log.Printf("Making a new QC with vote %v\n, voters %v", v, maker.voters)
@@ -128,7 +131,10 @@ func (maker *tcMaker) append(t timeout, committee Committee) (*TC, error) {
 	maker.votes = append(maker.votes, authorityTimeoutRound{t.author, t.highQC.Round})
 	maker.weight += committee.Stake(t.author)
 
-	maker.aggregateSig.Add(t.signature)
+	err := maker.aggregateSig.Add(t.signature)
+	if err != nil {
+		return nil, err
+	}
 
 	if maker.weight >= committee.QuorumThreshold() {
 		maker.weight = 0

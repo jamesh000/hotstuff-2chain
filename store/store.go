@@ -125,13 +125,13 @@ func (s Store) Read(key Key) (*Value, error) {
 	return response.Value, response.Err
 }
 
-func (s Store) NotifyRead(key Key) (Value, error) {
+func (s Store) NotifyRead(key Key) (*Value, error) {
 	responseCh := make(chan StoreResult, 1)
 	s.channel <- command{notifyReadCommand, key, nil, responseCh}
 
 	response := <-responseCh
 
-	return *response.Value, response.Err
+	return response.Value, response.Err
 }
 
 func (s Store) NotifyReadChannel(key Key) <-chan StoreResult {

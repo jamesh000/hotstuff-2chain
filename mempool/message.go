@@ -86,9 +86,13 @@ func DeserializeMempoolMessage(data []byte) (mempoolMessage, error) {
 			missingDigests[i] = *d
 		}
 
+		origin, err := new(crypto.PublicKey).FromBytes(msg.ReqMessage.Origin)
+		if err != nil {
+			return nil, err
+		}
 		newReqMessage := &requestMessage{
 			missing: missingDigests,
-			origin:  crypto.PublicKey(msg.ReqMessage.Origin),
+			origin:  *origin,
 		}
 
 		return newReqMessage, nil

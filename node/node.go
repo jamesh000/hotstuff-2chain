@@ -87,8 +87,8 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 
 func (n *Node) ProcessBlocks() {
 	log.Println("STARTED PROCESSING BLOCKS")
+	w := bufio.NewWriter(os.Stdout)
 	for block := range n.commit {
-		w := bufio.NewWriter(os.Stdout)
 		fmt.Fprintf(w, "%v HAS BEEN COMMITTED!\n", block)
 		fmt.Fprintln(w, "It contains the following batches:")
 		for _, digest := range block.Payload {

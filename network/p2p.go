@@ -54,7 +54,7 @@ func NewRoutedHost(ctx context.Context, addr string, priv crypto.PrivKey, bsPeer
 		return nil, err
 	}
 
-	bootstrapPeers := make([]peer.AddrInfo, len(bsPeers))
+	bootstrapPeers := make([]peer.AddrInfo, 0, len(bsPeers))
 	for _, p := range bsPeers {
 		pinfo, err := peer.AddrInfoFromString(p)
 		if err != nil {

@@ -37,6 +37,7 @@ func CreateConfig(t *testing.T, count uint, bootstrapAddrs []string) (string, []
 
 	secretFiles := make([]string, 0, count)
 	authorityInfos := make([]consensus.AuthorityInfo, 0, count)
+	memAuthorityInfos := make([]mempool.AuthorityInfo, 0, count)
 
 	for i := range count {
 		secret, name := crypto.GenerateKeypair()
@@ -67,12 +68,18 @@ func CreateConfig(t *testing.T, count uint, bootstrapAddrs []string) (string, []
 			Stake:   1,
 			Address: address,
 		}
+		ithMemAuthority := mempool.AuthorityInfo{
+			Author:  name,
+			Stake:   1,
+			Address: address,
+		}
 
 		authorityInfos = append(authorityInfos, ithAuthority)
+		memAuthorityInfos = append(memAuthorityInfos, ithMemAuthority)
 	}
 
 	consensusCommittee := consensus.NewCommittee(authorityInfos, 1)
-	mempoolCommitee := mempool.Committee{Empty: "nothing for now"}
+	mempoolCommitee := mempool.NewCommittee(memAuthorityInfos, 1)
 
 	newCommittee := node.Committee{
 		Consensus:      consensusCommittee,

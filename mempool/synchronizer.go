@@ -86,7 +86,7 @@ func (s *synchronizer) run() {
 								log.Println(result.Err)
 								return
 							}
-							waiting <- crypto.Digest(*result.Value)
+							waiting <- d
 						case <-cancelHandler:
 							return
 						}
