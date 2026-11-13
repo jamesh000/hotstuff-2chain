@@ -25,7 +25,6 @@ type Receiver struct {
 func SpawnReceiver(host RoutedHost, handler MessageHandler, proto protocol.ID) {
 	host.node.SetStreamHandler(proto, func(stream network.Stream) {
 		peer := stream.Conn().RemotePeer()
-		log.Printf("Incoming connection establised with %v\n", peer)
 		spawnRunner(stream, peer, handler)
 	})
 }
@@ -39,9 +38,7 @@ func spawnRunner(stream network.Stream, pid peer.ID, handler MessageHandler) {
 	for {
 		msg, err := reader.ReadMsg()
 		if err != nil {
-			if err == io.EOF {
-				log.Printf("Peer %v closed stream", pid)
-			} else {
+			if err != io.EOF {
 				log.Printf("Error reading from peer %v: %v\n", pid, err.Error())
 				stream.Reset()
 			}

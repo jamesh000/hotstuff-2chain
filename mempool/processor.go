@@ -1,8 +1,6 @@
 package mempool
 
 import (
-	"log"
-
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/store"
 )
@@ -17,8 +15,6 @@ func spawnProcessor(store store.Store, rxBatch <-chan sealedBatch, txDigest chan
 			digest := crypto.NewDigest(batch)
 
 			store.Write(digest[:], batch)
-
-			log.Printf("Processed batch %v, sending to consensus\n", digest)
 
 			txDigest <- digest
 		}

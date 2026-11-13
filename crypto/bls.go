@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log"
 
 	blst "github.com/supranational/blst/bindings/go"
 )
@@ -187,8 +186,6 @@ func (s Signature) FastAggregateVerify(d Digest, pks []PublicKey) bool {
 	for _, pk := range pks {
 		bpks = append(bpks, new(blstPublicKey).Uncompress(pk[:]))
 	}
-
-	log.Printf("Verifying the signature on the message: %v\n", d)
 
 	return new(blstSignature).Uncompress(s[:]).FastAggregateVerify(true, bpks, d[:], []byte(dst))
 }

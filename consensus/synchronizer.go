@@ -51,7 +51,6 @@ func NewSynchronizer(
 				go blockWaiter(store, parent, block, waiting)
 
 				if _, ok := requests[parent]; !ok {
-					log.Printf("Requesting sync for block %v\n", parent)
 					now := time.Now().UnixMilli()
 					requests[parent] = now
 
@@ -74,8 +73,6 @@ func NewSynchronizer(
 				for digest, timestamp := range requests {
 					now := time.Now().UnixMilli()
 					if timestamp+int64(syncRetryDelay) < now {
-						log.Printf("Requesting sync for block %v (retry)\n", digest)
-
 						_, addresses := committee.BroadcastAddresses(name)
 						message, err := (syncRequestMessage{digest, name}).SerializeConsensusMessage()
 						if err != nil {

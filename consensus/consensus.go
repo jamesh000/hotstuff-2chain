@@ -1,9 +1,6 @@
 package consensus
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/mempool"
 	"github.com/jamesh000/hotstuff-2chain/network"
@@ -44,7 +41,6 @@ func SpawnConsensus(
 		ConsensusReceiverHandler{consensusCh, helperCh},
 		protocol.ID(CONSENSUS_PROTOCOL),
 	)
-	log.Printf("Node %v listening to consensus messages with peerid %v", name, host.ID())
 
 	leaderElector := NewRRLeaderElector(committee)
 
@@ -113,8 +109,6 @@ func (c ConsensusReceiverHandler) Dispatch(writer msgio.WriteCloser, msg []byte)
 
 	// Parse the message
 	switch msg := consensusMsg.(type) {
-	case *testMessage:
-		fmt.Println(msg.message)
 	case *syncRequestMessage:
 		c.txHelper <- helperMessage{msg.missing, msg.origin}
 	case *proposeMessage:

@@ -127,6 +127,8 @@ func (TestExecutor) Execute(txs [][]byte, state StateReader) (WriteSet, error) {
 			continue
 		}
 
+		log.Printf("Executing transaction: %v\n", tx)
+
 		key := AccountKey(tx.Account)
 
 		switch tx.Op {

@@ -64,12 +64,10 @@ func SpawnMempool(
 	newMempool.handleClientsTransactions(host)
 	newMempool.handleMempoolMessages(host)
 
-	addr, ok := newMempool.committee.MempoolAddress(newMempool.name)
+	_, ok := newMempool.committee.MempoolAddress(newMempool.name)
 	if !ok {
 		log.Fatalf("Our publickey is not in the committee\n")
 	}
-
-	log.Printf("Mempool booted on %v", addr)
 }
 
 func (mp *Mempool) handleConsensusMessages(rxConsensus <-chan ConsensusMessage, host *network.RoutedHost) {
@@ -115,9 +113,6 @@ func (mp *Mempool) handleClientsTransactions(host *network.RoutedHost) {
 		processorCh,
 		mp.txConsensus,
 	)
-
-	address, _ := mp.committee.MempoolAddress(mp.name)
-	log.Printf("Mempool listening for client transactions on %v\n", address)
 }
 
 func (mp *Mempool) handleMempoolMessages(host *network.RoutedHost) {
@@ -145,9 +140,6 @@ func (mp *Mempool) handleMempoolMessages(host *network.RoutedHost) {
 		processorCh,
 		mp.txConsensus,
 	)
-
-	address, _ := mp.committee.MempoolAddress(mp.name)
-	log.Printf("Mempool listening for client transactions on %v\n", address)
 }
 
 type txReceiverHandler struct {

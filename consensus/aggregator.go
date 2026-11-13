@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 )
@@ -94,7 +93,6 @@ func (maker *qcMaker) append(v vote, committee Committee) (*QC, error) {
 	}
 
 	if maker.weight >= committee.QuorumThreshold() {
-		log.Printf("Making a new QC with vote %v\n, voters %v", v, maker.voters)
 		maker.weight = 0
 		return &QC{
 				Hash:      v.hash,

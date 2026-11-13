@@ -101,9 +101,6 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC, stateRoot crypto.Digest)
 
 	block := NewBlock(qc, tc, p.name, round, payload, stateRoot, p.signatureService)
 
-	log.Printf("Created %v\n", block)
-	log.Printf("Broadcasting %v\n", block)
-
 	names, addresses := p.committee.BroadcastAddresses(p.name)
 
 	message, err := (proposeMessage{block}).SerializeConsensusMessage()
@@ -130,19 +127,16 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC, stateRoot crypto.Digest)
 
 	for stake := range stakeCh {
 		totalStake += stake
-		log.Printf("Got ack, totalstake is %v, threshold is %v\n", totalStake, p.committee.QuorumThreshold())
 		if totalStake >= p.committee.QuorumThreshold() {
 			break
 		}
 	}
-	log.Printf("Got all acks, totalStake = %v\n", totalStake)
 }
 
 func (p Proposer) run() {
 	for {
 		select {
 		case digest := <-p.rxMempool:
-			log.Printf("Got digest %v from mempool\n", digest)
 			p.buffer[digest] = struct{}{}
 		case message := <-p.rxMessage:
 			switch msg := message.(type) {

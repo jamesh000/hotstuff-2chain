@@ -161,8 +161,6 @@ func (c *Core) updateHighQc(qc *QC) {
 }
 
 func (c *Core) localTimeoutRound() error {
-	log.Printf("Timeout reaqched for round %v\n", c.round)
-
 	c.increaseLastVotedRound(c.round)
 
 	timeout := NewTimeout(c.highQC, c.round, c.name, c.signatureService)
@@ -180,8 +178,6 @@ func (c *Core) localTimeoutRound() error {
 }
 
 func (c *Core) handleVote(vote *vote) error {
-	log.Printf("Got vote = %v\n", vote)
-
 	if vote.round < c.round {
 		return nil
 	}
@@ -201,7 +197,6 @@ func (c *Core) handleVote(vote *vote) error {
 
 		// Make new block if we are the next leader
 		if c.name == c.leaderElector.getLeader(c.round) {
-			log.Printf("Made %v\n", qc)
 			c.generateProposal(nil)
 		}
 	}
@@ -209,8 +204,6 @@ func (c *Core) handleVote(vote *vote) error {
 }
 
 func (c *Core) handleTimeout(timeout *timeout) error {
-	log.Printf("Got %v\n", *timeout)
-
 	if timeout.round < c.round {
 		return nil
 	}
@@ -237,7 +230,6 @@ func (c *Core) handleTimeout(timeout *timeout) error {
 		c.network.Broadcast(addresses, message)
 
 		if c.name == c.leaderElector.getLeader(c.round) {
-			log.Printf("Made proposal with %v\n", tc)
 			c.generateProposal(tc)
 		}
 	}
@@ -252,7 +244,6 @@ func (c *Core) advanceRound(round Round) {
 	c.timer.Reset()
 
 	c.round = round + 1
-	log.Printf("Moved to round %v\n", c.round)
 
 	// cleanup the vote aggregator
 	c.aggregator.cleanup(c.round)
@@ -281,8 +272,6 @@ func (c *Core) processQC(qc *QC) {
 }
 
 func (c *Core) processBlock(block *Block) error {
-	log.Printf("Processing %v\n", block)
-
 	// Make sure we have the block's payload before executing it; if not, ask
 	// the mempool and wait for it.
 	if !c.mempoolDriver.verify(*block) {
@@ -297,7 +286,6 @@ func (c *Core) processBlock(block *Block) error {
 	}
 
 	if b0 == nil || b1 == nil {
-		log.Printf("Processing of %v suspended due to missing parent\n", block.Digest())
 		return nil
 	}
 
@@ -387,8 +375,6 @@ func (c *Core) deliverVote(vote *vote, blockRound Round) {
 func (c *Core) handleProposal(block *Block) error {
 	digest := block.Digest()
 
-	log.Printf("Got block = %v\n", *block)
-
 	if block.Author != c.leaderElector.getLeader(block.Round) {
 		return fmt.Errorf("Wrong leader %v for block %v in round %v", block.Author, digest, block.Round)
 	}
@@ -417,7 +403,6 @@ func (c *Core) handleTC(tc TC) error {
 	c.advanceRound(tc.Round)
 
 	if c.name == c.leaderElector.getLeader(c.round) {
-		log.Printf("2Made proposal with %v\n", tc)
 		c.generateProposal(&tc)
 	}
 
@@ -427,14 +412,11 @@ func (c *Core) handleTC(tc TC) error {
 func (c *Core) run() {
 	c.timer.Reset()
 	if c.name == c.leaderElector.getLeader(c.round) {
-		log.Println("I'm first, making block")
 		c.generateProposal(nil)
 	}
 
 	for {
 		var result error
-
-		log.Printf("Waiting again\n")
 
 		select {
 		case msg := <-c.rxMessage:
@@ -442,7 +424,6 @@ func (c *Core) run() {
 			case *proposeMessage:
 				result = c.handleProposal(&m.block)
 			case *voteMessage:
-				log.Println("GOT REMOTE VOTE!!!!!!!!)()(*#)*")
 				result = c.handleVote(&m.vote)
 			case *timeoutMessage:
 				result = c.handleTimeout(&m.timeout)

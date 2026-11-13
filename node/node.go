@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/jamesh000/hotstuff-2chain/consensus"
@@ -89,12 +88,10 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 		commit,
 	)
 
-	log.Printf("Node %v successfully booted\n", name)
 	return &Node{commit, *store}, nil
 }
 
 func (n *Node) ProcessBlocks() {
-	log.Println("STARTED PROCESSING BLOCKS")
 	w := bufio.NewWriter(os.Stdout)
 	for block := range n.commit {
 		fmt.Fprintf(w, "%v HAS BEEN COMMITTED!\n", block)

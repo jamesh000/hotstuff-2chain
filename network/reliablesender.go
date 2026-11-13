@@ -122,13 +122,12 @@ func (c reliableConnection) run() {
 				}
 			}
 		} else {
-			log.Printf("Outgoing connection established with %v\n", c.address)
-
 			delay = c.retryDelay
 			retry = 0
 
-			err := c.keepAlive(stream)
-			log.Printf("%v\n", err)
+			if err := c.keepAlive(stream); err != nil {
+				log.Printf("Connection to peer %v closed: %v\n", c.address, err)
+			}
 		}
 	}
 }
