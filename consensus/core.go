@@ -19,9 +19,11 @@ type Core struct {
 	signatureService   crypto.SignatureService
 	leaderElector      leaderElector
 	mempoolDriver      MempoolDriver
+	stateDriver        StateDriver
 	synchronizer       Synchronizer
 	rxMessage          <-chan consensusMessage
 	rxLoopback         <-chan Block
+	rxState            <-chan stateRootResult
 	txProposer         chan<- proposerMessage
 	txCommit           chan<- Block
 	round              Round
@@ -31,6 +33,14 @@ type Core struct {
 	timer              *Timer
 	aggregator         aggregator
 	network            network.SimpleSender
+	// votes waiting on the state root of the block they extend, keyed by the
+	// parent block digest
+	pendingVotes map[crypto.Digest][]pendingVote
+}
+
+type pendingVote struct {
+	block *Block
+	vote  *vote
 }
 
 func SpawnCore(
@@ -41,6 +51,7 @@ func SpawnCore(
 	store store.Store,
 	leaderElector leaderElector,
 	mempoolDriver MempoolDriver,
+	stateDriver StateDriver,
 	synchronizer Synchronizer,
 	timeoutDelay uint64,
 	rxMessage <-chan consensusMessage,
@@ -55,9 +66,11 @@ func SpawnCore(
 		signatureService:   signatureService,
 		leaderElector:      leaderElector,
 		mempoolDriver:      mempoolDriver,
+		stateDriver:        stateDriver,
 		synchronizer:       synchronizer,
 		rxMessage:          rxMessage,
 		rxLoopback:         rxLoopback,
+		rxState:            stateDriver.rxResult,
 		txProposer:         txProposer,
 		txCommit:           txCommit,
 		round:              1,
@@ -67,6 +80,7 @@ func SpawnCore(
 		timer:              NewTimer(timeoutDelay),
 		aggregator:         NewAggregator(committee),
 		network:            *network.NewSimpleSender(host, protocol.ID(CONSENSUS_PROTOCOL)),
+		pendingVotes:       make(map[crypto.Digest][]pendingVote),
 	}
 
 	go newCore.run()
@@ -114,16 +128,17 @@ func (c *Core) commit(block Block) error {
 
 	toCommit := new(deque.Deque[Block])
 	parent := &block
-	for c.lastCommittedRound+1 < parent.Round {
+	for parent.Round > c.lastCommittedRound {
+		toCommit.PushFront(*parent)
+		if parent.Qc.IsGenesisQC() {
+			break
+		}
 		ancestor, err := c.synchronizer.getParentBlock(parent)
 		if err != nil {
 			panic(err)
 		}
-
-		toCommit.PushBack(*ancestor)
 		parent = ancestor
 	}
-	toCommit.PushBack(block)
 
 	c.lastCommittedRound = block.Round
 
@@ -132,6 +147,7 @@ func (c *Core) commit(block Block) error {
 			log.Printf("Committed %v\n", b)
 		}
 
+		c.stateDriver.Commit(b.Digest())
 		c.txCommit <- b
 	}
 
@@ -267,6 +283,13 @@ func (c *Core) processQC(qc *QC) {
 func (c *Core) processBlock(block *Block) error {
 	log.Printf("Processing %v\n", block)
 
+	// Make sure we have the block's payload before executing it; if not, ask
+	// the mempool and wait for it.
+	if !c.mempoolDriver.verify(*block) {
+		log.Printf("Processing of %v suspended: missing payload\n", block.Digest())
+		return nil
+	}
+
 	// check that we have block ancestors
 	b0, b1, err := c.synchronizer.getAncestors(block)
 	if err != nil {
@@ -283,42 +306,82 @@ func (c *Core) processBlock(block *Block) error {
 		log.Printf("Storing of block failed: %v\n", err)
 	}
 
+	// Execute the block speculatively so its state root is ready for the
+	// next block.
+	c.stateDriver.Execute(block)
+
 	c.cleanupProposer(b0, b1, block)
 
 	// Check if we can commit the head of the 2-chain
 	if b0.Round+1 == b1.Round {
 		c.mempoolDriver.cleanup(b0.Round)
-		log.Println(293)
 		if err := c.commit(*b0); err != nil {
 			return err
 		}
 	}
 
 	if vote := c.make_vote(block); vote != nil {
-		nextLeader := c.leaderElector.getLeader(c.round + 1)
-
-		// debugging
-		log.Printf("Voting %v on block %v\n", vote, block)
-
-		if nextLeader == c.name {
-			c.handleVote(vote)
-		} else {
-			log.Printf("Sending %v to %v\n", vote, nextLeader)
-			address, ok := c.committee.Address(nextLeader)
-			if !ok {
-				return fmt.Errorf("The next leader is not in the committee")
-			}
-			message, err := (voteMessage{*vote}).SerializeConsensusMessage()
-			if err != nil {
-				return err
-			}
-			c.network.Send(address, message)
-			log.Println("Allegedly sent vote")
-		}
+		// Before voting, make sure the state root in the block matches the
+		// root we computed for its parent.
+		c.requestStateCheck(block, vote)
 	}
 
-	log.Println("Finished somehow??")
 	return nil
+}
+
+// requestStateCheck waits for the computed state root of block.Parent() and
+// then decides whether the vote may be delivered.
+func (c *Core) requestStateCheck(block *Block, v *vote) {
+	parent := block.Parent()
+	c.pendingVotes[parent] = append(c.pendingVotes[parent], pendingVote{block: block, vote: v})
+	c.stateDriver.RequestRoot(parent, block.Qc.Round)
+}
+
+// handleStateRoot resolves pending votes against a computed parent root.
+func (c *Core) handleStateRoot(res stateRootResult) {
+	pending := c.pendingVotes[res.digest]
+	delete(c.pendingVotes, res.digest)
+
+	if res.err != nil {
+		log.Printf("State root unavailable for %v: %v\n", res.digest, res.err)
+		return
+	}
+
+	for _, pv := range pending {
+		if pv.block.StateRoot != res.root {
+			log.Printf("Block %v has state root %v, expected %v; not voting\n",
+				pv.block.Digest(), pv.block.StateRoot, res.root)
+			continue
+		}
+		c.deliverVote(pv.vote, pv.block.Round)
+	}
+}
+
+// deliverVote sends a validated vote to the leader of the round after the
+// voted block (or handles it locally if we are that leader).
+func (c *Core) deliverVote(vote *vote, blockRound Round) {
+	nextLeader := c.leaderElector.getLeader(blockRound + 1)
+
+	// debugging
+	log.Printf("Voting %v\n", vote)
+
+	if nextLeader == c.name {
+		c.handleVote(vote)
+	} else {
+		log.Printf("Sending %v to %v\n", vote, nextLeader)
+		address, ok := c.committee.Address(nextLeader)
+		if !ok {
+			log.Printf("The next leader is not in the committee\n")
+			return
+		}
+		message, err := (voteMessage{*vote}).SerializeConsensusMessage()
+		if err != nil {
+			log.Printf("Failed to serialize vote: %v\n", err)
+			return
+		}
+		c.network.Send(address, message)
+		log.Println("Allegedly sent vote")
+	}
 }
 
 func (c *Core) handleProposal(block *Block) error {
@@ -338,11 +401,6 @@ func (c *Core) handleProposal(block *Block) error {
 
 	if block.Tc != nil {
 		c.advanceRound(block.Tc.Round)
-	}
-
-	if !c.mempoolDriver.verify(*block) {
-		log.Printf("Processing of %v suspended: missing payload\n", digest)
-		return nil
 	}
 
 	return c.processBlock(block)
@@ -395,6 +453,8 @@ func (c *Core) run() {
 			}
 		case block := <-c.rxLoopback:
 			result = c.processBlock(&block)
+		case res := <-c.rxState:
+			c.handleStateRoot(res)
 		case <-c.timer.timer.C:
 			result = c.localTimeoutRound()
 		}

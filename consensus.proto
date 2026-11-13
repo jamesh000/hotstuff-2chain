@@ -46,6 +46,7 @@ message Block {
         uint64 round = 4;
         repeated bytes payload = 5;
         bytes signature = 6;
+        bytes stateRoot = 7;
 }
 
 message QC {

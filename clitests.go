@@ -267,7 +267,7 @@ func testCrypto(ctx context.Context, cmd *cli.Command) error {
 	msg := []byte("Hello, world!")
 	d := crypto.NewDigest(msg)
 
-	testBlock := consensus.NewBlock(consensus.QC{}, nil, pk, 1, []crypto.Digest{d}, signatureService)
+	testBlock := consensus.NewBlock(consensus.QC{}, nil, pk, 1, []crypto.Digest{d}, crypto.Digest{}, signatureService)
 
 	fmt.Printf("Block is : %v\n", testBlock)
 

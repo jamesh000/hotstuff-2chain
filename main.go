@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/jamesh000/hotstuff-2chain/client"
 	"github.com/urfave/cli/v3"
 )
 
@@ -62,6 +63,13 @@ func main() {
 				Name:   "testclient",
 				Usage:  "Run a test client",
 				Action: testClient,
+			},
+			{
+				Name:  "txclient",
+				Usage: "Submit testing transactions to the mempool",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return client.Run("testcommittee.cmt")
+				},
 			},
 			{
 				Name:   "testcrypto",

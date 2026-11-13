@@ -9,8 +9,10 @@ import (
 
 	"github.com/jamesh000/hotstuff-2chain/consensus"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
+	"github.com/jamesh000/hotstuff-2chain/execution"
 	"github.com/jamesh000/hotstuff-2chain/mempool"
 	"github.com/jamesh000/hotstuff-2chain/network"
+	"github.com/jamesh000/hotstuff-2chain/state"
 	"github.com/jamesh000/hotstuff-2chain/store"
 )
 
@@ -52,6 +54,11 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 		return nil, err
 	}
 
+	stateClient, err := state.Spawn(storePath+".state", *store, execution.TestExecutor{})
+	if err != nil {
+		return nil, err
+	}
+
 	signatureService := crypto.NewSignatureService(secretKey)
 
 	host, err := network.NewRoutedHost(context.Background(), "/ip4/0.0.0.0/tcp/0", peerPriv, committee.BootstrapPeers)
@@ -76,6 +83,7 @@ func NewNode(committeeFile string, keyFile string, storePath string, parameterFi
 		parameters.Consensus,
 		signatureService,
 		*store,
+		*stateClient,
 		mempoolToConsensusCh,
 		consensusToMempoolCh,
 		commit,
@@ -112,7 +120,12 @@ func (n *Node) ProcessBlocks() {
 			}
 
 			for _, tx := range batch {
-				fmt.Fprintln(w, string(tx))
+				parsed, err := execution.DeserializeTransaction(tx)
+				if err != nil {
+					fmt.Fprintf(w, "  (invalid transaction: %v)\n", err)
+					continue
+				}
+				fmt.Fprintf(w, "  %v\n", parsed)
 			}
 		}
 		w.Flush()

@@ -5,27 +5,32 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	jmt "github.com/jamesh000/SimpleJMT"
 	pb "github.com/jamesh000/hotstuff-2chain/consensuspb"
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"google.golang.org/protobuf/proto"
 )
 
 type Block struct {
-	Qc        QC
-	Tc        *TC
-	Author    crypto.PublicKey
-	Round     Round
-	Payload   []crypto.Digest
+	Qc      QC
+	Tc      *TC
+	Author  crypto.PublicKey
+	Round   Round
+	Payload []crypto.Digest
+	// JMT root hash of the state at the end of the parent block (the block
+	// certified by Qc)
+	StateRoot crypto.Digest
 	Signature crypto.Signature
 }
 
-func NewBlock(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []crypto.Digest, sigservice crypto.SignatureService) Block {
+func NewBlock(qc QC, tc *TC, author crypto.PublicKey, round Round, payload []crypto.Digest, stateRoot crypto.Digest, sigservice crypto.SignatureService) Block {
 	block := Block{
-		Qc:      qc,
-		Tc:      tc,
-		Author:  author,
-		Round:   round,
-		Payload: payload,
+		Qc:        qc,
+		Tc:        tc,
+		Author:    author,
+		Round:     round,
+		Payload:   payload,
+		StateRoot: stateRoot,
 	}
 
 	sig := sigservice.RequestSignature(block.Digest())
@@ -42,6 +47,7 @@ func GenesisBlock() Block {
 		Author:    crypto.PublicKey{},
 		Round:     0,
 		Payload:   nil,
+		StateRoot: crypto.Digest(jmt.EmptyRootHash),
 		Signature: crypto.Signature{},
 	}
 }
@@ -84,6 +90,8 @@ func (b Block) Digest() crypto.Digest {
 	for _, p := range b.Payload {
 		buf.Write(p[:])
 	}
+	buf.Write(b.Qc.Hash[:])
+	buf.Write(b.StateRoot[:])
 
 	return crypto.NewDigest(buf.Bytes())
 }
@@ -115,7 +123,7 @@ func (b *Block) Deserialize(data []byte) (*Block, error) {
 }
 
 func (b Block) String() string {
-	return fmt.Sprintf("Block<%v>(%v, %v, %v)", b.Digest(), b.Author, b.Round, b.Payload)
+	return fmt.Sprintf("Block<%v>(%v, %v, %v, state %v)", b.Digest(), b.Author, b.Round, b.Payload, b.StateRoot)
 }
 
 type vote struct {

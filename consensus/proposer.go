@@ -7,6 +7,7 @@ import (
 
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/network"
+	"github.com/jamesh000/hotstuff-2chain/state"
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
@@ -28,6 +29,19 @@ type proposerCleanupMessage struct {
 
 func (msg proposerCleanupMessage) proposerMessageMember() {}
 
+// makeBlockRequest is a proposal whose parent state root we are waiting for.
+type makeBlockRequest struct {
+	id    uint64
+	round Round
+	qc    QC
+	tc    *TC
+}
+
+type makeBlockResult struct {
+	id   uint64
+	root state.RootResult
+}
+
 type Proposer struct {
 	name             crypto.PublicKey
 	committee        Committee
@@ -37,6 +51,10 @@ type Proposer struct {
 	txLoopback       chan<- Block
 	buffer           map[crypto.Digest]struct{}
 	network          network.ReliableSender
+	state            state.Client
+	results          chan makeBlockResult
+	nextMakeID       uint64
+	currentMake      *makeBlockRequest
 }
 
 func spawnProposer(
@@ -46,6 +64,7 @@ func spawnProposer(
 	rxMempool <-chan crypto.Digest,
 	rxMessage <-chan proposerMessage,
 	txLoopback chan<- Block,
+	stateClient state.Client,
 	host network.RoutedHost,
 	proto protocol.ID,
 ) {
@@ -58,6 +77,8 @@ func spawnProposer(
 		txLoopback:       txLoopback,
 		buffer:           make(map[crypto.Digest]struct{}),
 		network:          network.NewReliableSender(host, proto),
+		state:            stateClient,
+		results:          make(chan makeBlockResult, CHANNEL_CAPACITY),
 	}.run()
 }
 
@@ -66,7 +87,7 @@ func stakeWaiter(waitFor <-chan []byte, deliver Stake, deliverTo chan<- Stake) {
 	deliverTo <- deliver
 }
 
-func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
+func (p Proposer) makeBlock(round Round, qc QC, tc *TC, stateRoot crypto.Digest) {
 	payload := make([]crypto.Digest, 0, len(p.buffer))
 	for d, _ := range p.buffer {
 		payload = append(payload, d)
@@ -78,7 +99,7 @@ func (p Proposer) makeBlock(round Round, qc QC, tc *TC) {
 		time.Sleep(3 * time.Second)
 	}
 
-	block := NewBlock(qc, tc, p.name, round, payload, p.signatureService)
+	block := NewBlock(qc, tc, p.name, round, payload, stateRoot, p.signatureService)
 
 	log.Printf("Created %v\n", block)
 	log.Printf("Broadcasting %v\n", block)
@@ -126,12 +147,40 @@ func (p Proposer) run() {
 		case message := <-p.rxMessage:
 			switch msg := message.(type) {
 			case proposerMakeMessage:
-				p.makeBlock(msg.round, msg.qc, msg.tc)
+				p.currentMake = &makeBlockRequest{
+					id:    p.nextMakeID,
+					round: msg.round,
+					qc:    msg.qc,
+					tc:    msg.tc,
+				}
+				p.nextMakeID++
+
+				// Wait for the parent block's state root without blocking the
+				// loop; a newer proposal supersedes this one.
+				go func(req makeBlockRequest) {
+					res := <-p.state.Root(req.qc.Hash, req.qc.Round)
+					p.results <- makeBlockResult{id: req.id, root: res}
+				}(*p.currentMake)
 			case proposerCleanupMessage:
 				for _, x := range msg.digests {
 					delete(p.buffer, x)
 				}
 			}
+		case res := <-p.results:
+			if p.currentMake == nil || res.id != p.currentMake.id {
+				// a newer proposal superseded this one
+				continue
+			}
+
+			req := p.currentMake
+			p.currentMake = nil
+
+			if res.root.Err != nil {
+				log.Printf("Failed to get state root of parent %v: %v\n", req.qc.Hash, res.root.Err)
+				continue
+			}
+
+			p.makeBlock(req.round, req.qc, req.tc, res.root.Root)
 		}
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/jamesh000/hotstuff-2chain/crypto"
 	"github.com/jamesh000/hotstuff-2chain/mempool"
 	"github.com/jamesh000/hotstuff-2chain/network"
+	"github.com/jamesh000/hotstuff-2chain/state"
 	"github.com/jamesh000/hotstuff-2chain/store"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-msgio"
@@ -28,6 +29,7 @@ func SpawnConsensus(
 	parameters Parameters,
 	signatureService crypto.SignatureService,
 	store store.Store,
+	stateClient state.Client,
 	rxMempool <-chan crypto.Digest,
 	txMempool chan<- mempool.ConsensusMessage,
 	txCommit chan<- Block,
@@ -45,6 +47,9 @@ func SpawnConsensus(
 	log.Printf("Node %v listening to consensus messages with peerid %v", name, host.ID())
 
 	leaderElector := NewRRLeaderElector(committee)
+
+	// Create the state driver
+	stateDriver := NewStateDriver(stateClient)
 
 	// Create the mempool driver
 	mempoolDriver := NewMempoolDriver(store, txMempool, loopbackCh)
@@ -68,6 +73,7 @@ func SpawnConsensus(
 		store,
 		leaderElector,
 		mempoolDriver,
+		stateDriver,
 		synchronizer,
 		parameters.TimeoutDelay,
 		consensusCh,
@@ -84,6 +90,7 @@ func SpawnConsensus(
 		rxMempool,
 		proposerCh,
 		loopbackCh,
+		stateClient,
 		host,
 		protocol.ID(CONSENSUS_PROTOCOL),
 	)

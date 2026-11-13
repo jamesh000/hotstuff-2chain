@@ -89,31 +89,34 @@ type waiterResult struct {
 
 func spawnWaiter(missing []crypto.Digest, store store.Store, deliver *Block, handler chan struct{}, result chan<- waiterResult) {
 	go func() {
-		nrCount := len(missing)
-		errCh := make(chan error, 10)
-
-		for _, d := range missing {
-			go func() {
-				_, err := store.NotifyRead(d[:])
-				errCh <- err
-			}()
-		}
-
-		select {
-		case err := <-errCh:
-			if err != nil {
-				result <- waiterResult{nil, err}
-				return
-			}
-
-			nrCount := nrCount - 1
-			if nrCount == 0 {
-				result <- waiterResult{deliver, nil}
-				return
-			}
-		case <-handler:
+		remaining := len(missing)
+		if remaining == 0 {
+			result <- waiterResult{deliver, nil}
 			return
 		}
+
+		errCh := make(chan error, remaining)
+		for _, d := range missing {
+			go func(d crypto.Digest) {
+				_, err := store.NotifyRead(d[:])
+				errCh <- err
+			}(d)
+		}
+
+		for remaining > 0 {
+			select {
+			case err := <-errCh:
+				if err != nil {
+					result <- waiterResult{nil, err}
+					return
+				}
+				remaining--
+			case <-handler:
+				return
+			}
+		}
+
+		result <- waiterResult{deliver, nil}
 	}()
 }
 

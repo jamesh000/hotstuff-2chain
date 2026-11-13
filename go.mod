@@ -1,11 +1,11 @@
 module github.com/jamesh000/hotstuff-2chain
 
-go 1.25.7
+go 1.26.5
 
 require (
 	github.com/cockroachdb/pebble v1.1.5
 	github.com/gammazero/deque v1.2.1
-	github.com/gogo/protobuf v1.3.2
+	github.com/jamesh000/SimpleJMT v0.0.0-20261113195418-379019e90065
 	github.com/libp2p/go-libp2p v0.48.0
 	github.com/libp2p/go-libp2p-kad-dht v0.39.0
 	github.com/libp2p/go-libp2p-pubsub v0.16.0
@@ -13,7 +13,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/supranational/blst v0.3.16
 	github.com/urfave/cli/v3 v3.9.0
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
@@ -36,6 +36,7 @@ require (
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.5-0.20231225225746-43d5d4cd4e0e // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/uuid v1.6.0 // indirect

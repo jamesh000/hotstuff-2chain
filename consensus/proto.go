@@ -17,6 +17,7 @@ func (b Block) toProto() *pb.Block {
 		Round:      b.Round,
 		Payload:    payloadData,
 		Signature:  b.Signature[:],
+		StateRoot:  b.StateRoot[:],
 	}
 
 	if b.Tc != nil {
@@ -61,12 +62,18 @@ func blockFromProto(pblock *pb.Block) (*Block, error) {
 		return nil, err
 	}
 
+	stateRoot, err := new(crypto.Digest).FromBytes(pblock.StateRoot)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Block{
 			Qc:        *qc,
 			Tc:        tc,
 			Author:    *author,
 			Round:     pblock.Round,
 			Payload:   payloadDigests,
+			StateRoot: *stateRoot,
 			Signature: *signature,
 		},
 		nil
